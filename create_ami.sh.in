@@ -1,0 +1,145 @@
+#!/bin/bash
+# ============================================================================
+# Script for bundling, uploading, and registering the Amazon EC2 image created
+# by SUSE Studio to Amazon S3/EC2.
+#
+# Requires the Amazon EC2 AMI and API Tools:
+# http://developer.amazonwebservices.com/connect/entry.jspa?externalID=368
+# http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351
+#
+# See README for details.
+#
+# Version: 1.0.0
+# Author:  James Tan <jatan@suse.de>
+# Contact: feedback@susestudio.com
+# ============================================================================
+
+# Appliance specific variables
+arch={ARCH}
+bucket={BUCKET}
+image={IMAGE}
+instance_type={INSTANCE_TYPE}
+prefix={APP_NAME}
+
+# Defaults
+region=us-east-1
+
+function usage() {
+  echo "Usage: create_ami.sh [--region REGION] [--bucket BUCKET] ..."
+  echo "Bundles, uploads, and registers the associated image to Amazon EC2."
+  echo
+  echo "Options:"
+  echo "  --region REGION     The region to upload and register in [us-east-1, us-west-1,"
+  echo "                      eu-west-1, ap-southeast-1]. Default is us-east-1."
+  echo "  --bucket BUCKET     Name of bucket to upload to. Default is $bucket."
+  echo "  --prefix PREFIX     Prefix of image manifest. Default is $prefix."
+  echo "  --image  IMAGE      Path to image file. Default is $image."
+}
+
+function check_ec2_tools() {
+  for cmd in ec2-bundle-image ec2-upload-bundle ec2-register; do
+    `$cmd 2>/dev/null`
+    if [ $? -ne 1 ]; then
+      echo "$cmd not found. See README for more information."
+      exit 2
+    fi
+  done
+}
+
+function check_credentials() {
+  for var in AWS_USER_ID AWS_ACCESS_KEY AWS_SECRET_KEY EC2_CERT EC2_PRIVATE_KEY; do
+    if [ ! "${!var}" ]; then
+      echo "$var is undefined. See README for more information."
+      exit 3
+    fi
+  done
+}
+
+function set_location_and_aki_id() {
+  # Figure out the location and PV-GRUB AKI from region.
+  # Also appends location to bucket name if outside of US.
+  case "$region" in
+    us-east-1)
+      location=US
+      aki_id=aki-407d9529; [ "$arch" = "x86_64" ] && aki_id=aki-427d952b;;
+    us-west-1)
+      location="$region"
+      bucket="$bucket-us-west"
+      aki_id=aki-99a0f1dc; [ "$arch" = "x86_64" ] && aki_id=aki-9ba0f1de;;
+    eu-west-1)
+      location=EU
+      bucket="$bucket-eu"
+      aki_id=aki-4deec439; [ "$arch" = "x86_64" ] && aki_id=aki-4feec43b;;
+    ap-southeast-1)
+      location="$region"
+      bucket="$bucket-ap"
+      aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
+    *) echo >&2 "FATAL: Unknown region \"$region\""; exit 4;
+  esac
+}
+
+function exit_if_failed() {
+  if [ $? -ne 0 ]; then
+    exit 10
+  fi
+}
+
+function bundle_image() {
+  tmp_dir=`mktemp -d`
+  mkdir -p "$tmp_dir"
+
+  echo "** region: $region, bucket: $bucket"
+  echo "** Running ec2-bundle-image ($tmp_dir)..."
+  ec2-bundle-image -u $AWS_USER_ID --cert $EC2_CERT --privatekey $EC2_PRIVATE_KEY \
+                   -i "$image" -p "$prefix" -d "$tmp_dir/" -r $arch --kernel $aki_id
+  exit_if_failed
+  echo
+}
+
+function upload_bundle() {
+  echo "** Running ec2-upload-bundle..."
+  ec2-upload-bundle -b "$bucket" -m "$tmp_dir/$prefix.manifest.xml" -a $AWS_ACCESS_KEY \
+                    -s $AWS_SECRET_KEY --location "$location" --retry
+  exit_if_failed
+  echo
+}
+
+function register_ami() {
+  echo "** Running ec2-register..."
+  ami_id=$(ec2-register "$bucket/$prefix.manifest.xml" --region $region | cut -f2)
+  echo
+  if [ "$ami_id" ]; then
+    # Clean up
+    rm -rf "$tmp_dir"
+    echo "Done! You can launch your AMI ($ami_id) with the following command:"
+    echo "  ec2run $ami_id -K $EC2_PRIVATE_KEY -C $EC2_CERT -t $instance_type --region $region -k <KEYPAIR>"
+    exit 0
+  else
+    echo >&2 "FATAL: Failed to register AMI"
+    exit 5
+  fi
+}
+
+# Parse and set options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --region) region="$2"; shift;;
+    --bucket) bucket="$2"; shift;;
+    --prefix) prefix="$2"; shift;;
+    --image)   image="$2"; shift;;
+    -h)     usage; exit 1;;
+    --help) usage; exit 1;;
+    --) shift; break;;
+    -*) echo >&2 "FATAL: Invalid option \"$1\"";   echo; usage; exit 1;;
+    *)  echo >&2 "FATAL: Invalid argument \"$1\""; echo; usage; exit 1;;
+  esac
+  shift
+done
+
+check_ec2_tools
+check_credentials
+set_location_and_aki_id
+bundle_image
+upload_bundle
+register_ami
+

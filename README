@@ -1,0 +1,67 @@
+------------------------------------------------
+README for SUSE Studio Amazon EC2 appliance
+------------------------------------------------
+
+This tarball contains the Amazon EC2 appliance created by SUSE Studio and the
+create_ami.sh script. The script bundles and uploads the appliance to Amazon
+S3. It also registers it with Amazon EC2 as an AMI (Amazon Machine Image).
+
+The Amazon EC2 AMI and API tools must be installed for the script to work. These
+can be found at:
+
+  http://developer.amazonwebservices.com/connect/entry.jspa?externalID=368
+  http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351
+
+Additional help on setting up these tools can be found here:
+http://docs.amazonwebservices.com/AmazonEC2/gsg/2006-06-26/setting-up-your-tools.html
+
+In order to access Amazon Web Services (AWS), the script requires the following
+environment variables to be defined:
+
+  $AWS_USER_ID     - AWS user ID (eg. 123456789012)
+  $AWS_ACCESS_KEY  - AWS access key ID (eg. ABCDEFGHIJKLMNOPQRST)
+  $AWS_SECRET_KEY  - AWS secret access key (eg. abcdefghijklmnoprqrtuvwxyzabcdv)
+  $EC2_CERT        - Path to EC2 X.509 certification (eg. ~/cert-aws.pem)
+  $EC2_PRIVATE_KEY - Path to EC2 private key (eg. ~/pk-ec2.pem)
+
+Send your bug reports, questions, feedback, and suggestions to
+feedback@susestudio.com.
+
+-----------------
+Example
+-----------------
+
+Normal execution of the create_ami.sh script looks like this:
+
+  jamestyj@sg:/My_EC2.x86_64.0.0.1> ./create_ami.sh 
+  Bundling image file...
+  Splitting ec2-tmp/My_EC2.x86_64-0.0.1.tar.gz.enc...
+  Created My_EC2.x86_64-0.0.1.part.0
+  Created My_EC2.x86_64-0.0.1.part.1
+  Created My_EC2.x86_64-0.0.1.part.2
+  Created My_EC2.x86_64-0.0.1.part.3
+  Created My_EC2.x86_64-0.0.1.part.4
+  Created My_EC2.x86_64-0.0.1.part.5
+  Created My_EC2.x86_64-0.0.1.part.6
+  Created My_EC2.x86_64-0.0.1.part.7
+  Generating digests for each part...
+  Digests generated.
+  Creating bundle manifest...
+  ec2-bundle-image complete.
+  Creating bucket...
+  Uploading bundled image parts to the S3 bucket susestudio-dbbc81367aa...
+  Uploaded My_EC2.x86_64-0.0.1.part.0
+  Uploaded My_EC2.x86_64-0.0.1.part.1
+  Uploaded My_EC2.x86_64-0.0.1.part.2
+  Uploaded My_EC2.x86_64-0.0.1.part.3
+  Uploaded My_EC2.x86_64-0.0.1.part.4
+  Uploaded My_EC2.x86_64-0.0.1.part.5
+  Uploaded My_EC2.x86_64-0.0.1.part.6
+  Uploaded My_EC2.x86_64-0.0.1.part.7
+  Uploading manifest ...
+  Uploaded manifest.
+  Bundle upload completed.
+  Registering AMI...
+  Done! Use the following command to launch your newly created AMI:
+   ec2run ami-f1ef7898 -K ~/pk-aws.pem -C ~/cert-aws.pem -t m1.large
+

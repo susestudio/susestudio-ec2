@@ -1,0 +1,441 @@
+#!/bin/bash
+# ============================================================================
+# Script for creating an EBS backed Amazon EC2 image created by SUSE Studio.
+#
+# Requires Amazon EC2 API Tools:
+# http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351
+#
+# See README for details.
+#
+# Version: 1.0.0
+# Author:  James Tan <jatan@suse.de>
+# Contact: feedback@susestudio.com
+# ============================================================================
+
+# Appliance specific variables
+arch={ARCH}
+base={BASE}
+name={NAME}
+tarball=../{TARBALL}
+
+# Defaults
+region=us-east-1
+description="Built by SUSE Studio"
+
+
+function usage() {
+  echo "Usage: create_ebs_ami.sh [--region REGION] ..."
+  echo "Uploads and creates an EBS backed EC2 Amazon Machine Image (AMI) in Amazon Web Services (AWS)."
+  echo
+  echo "Options:"
+  echo "  --region REGION          The region to upload and register in [us-east-1, us-west-1,"
+  echo "                           eu-west-1, ap-southeast-1]. Default is 'us-east-1'."
+  echo "  --name NAME              AMI name. Must be unique. Default is '$name'."
+  echo "  --description TEXT       AMI description. Default is '$description'."
+  echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
+}
+
+function check_ec2_tools() {
+  for cmd in ec2-attach-volume ec2-create-image ec2-create-volume ec2-delete-volume \
+    ec2-describe-instances ec2-describe-volumes ec2-detach-volume ec2-run-instances \
+    ec2-stop-instances ec2-terminate-instances ec2-describe-group ec2-authorize \
+    ec2-add-keypair ec2-delete-keypair; do
+    type $cmd >/dev/null 2>&1
+    if [ $? -ne 0 ]; then
+      log "Cannot find required command '$cmd'. See README for more information."
+      exit 2
+    fi
+  done
+}
+
+function check_credentials() {
+  for var in AWS_USER_ID AWS_ACCESS_KEY AWS_SECRET_KEY EC2_CERT EC2_PRIVATE_KEY ; do
+    if [ ! "${!var}" ]; then
+      echo >&2 "'$var' is undefined. See README for more information."
+      exit 3
+    fi
+  done
+}
+
+function exit_if_failed() {
+  local code=$?
+  local newline=$1
+  if [ $code -ne 0 ]; then
+    [ "$newline" ] && echo ""
+    die $code "$output"
+  fi
+}
+
+function die() {
+  local code=$1
+  local output=$2
+  log "Failed (exit code $code)"
+  [ "$output" ] && echo "$output"
+  clean_up
+  exit 10
+}
+
+function log() {
+  local msg=$1
+  local opts=$2
+  local time=`date +%H:%M:%S`
+  echo $opts "$time $msg"
+}
+
+function find_ami() {
+  case "$base" in
+    "SLES10_SP3")
+      case "$region" in
+        us-east-1)
+          [ "$arch" = "i386"   ] && ami=ami-16a3577f
+          [ "$arch" = "x86_64" ] && ami=ami-eea35787;;
+        us-west-1)
+          [ "$arch" = "i386"   ] && ami=ami-d61b4b93
+          [ "$arch" = "x86_64" ] && ami=ami-d21b4b97;;
+        eu-west-1)
+          [ "$arch" = "i386"   ] && ami=ami-60576214
+          [ "$arch" = "x86_64" ] && ami=ami-62576216;;
+        ap-southeast-1)
+          [ "$arch" = "i386"   ] && ami=ami-72146a20
+          [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
+        *)
+          log "Error: Unknown region '$region'"
+          exit 1;;
+      esac;;
+    "SLES11_SP1")
+      case "$region" in
+        us-east-1)
+          [ "$arch" = "i386"   ] && ami=ami-e0a35789
+          [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
+        us-west-1)
+          [ "$arch" = "i386"   ] && ami=ami-d01b4b95
+          [ "$arch" = "x86_64" ] && ami=ami-dc1b4b99;;
+        eu-west-1)
+          [ "$arch" = "i386"   ] && ami=ami-6c576218
+          [ "$arch" = "x86_64" ] && ami=ami-6e57621a;;
+        ap-southeast-1)
+          [ "$arch" = "i386"   ] && ami=ami-76146a24
+          [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
+        *)
+          log "Error: Unknown region '$region'"
+          exit 1;;
+      esac;;
+    *)
+      log "Error: Unknown base system '$base'"
+      exit 1;;
+  esac
+  if [ ! "$ami" ]; then
+    log "Error: Unknown architecture '$arch'"
+    exit 1
+  fi
+}
+
+function create_security_group() {
+  log "Creating 'SUSE_Studio' security group in $region..."
+  output=`ec2-add-group "SUSE_Studio" -d "Used by SUSE Studio for creating EBS backed AMIs" --region $region 2>&1`
+  exit_code=$?
+  if [ $exit_code -eq 0 ]; then
+    log "Created new security group"
+  else
+    echo $output | grep -q "Client.InvalidGroup.Duplicate"
+    if [ $? -eq 0 ]; then
+      log "Security group already exists"
+    else
+      die $exit_code "$output"
+    fi
+  fi
+
+  log "Adding SSH permissions to 'SUSE_Studio' security group in $region..."
+  output=`ec2-authorize "SUSE_Studio" --region $region -P tcp -p 22 2>&1`
+  exit_code=$?
+  if [ $exit_code -eq 0 ]; then
+    log "Added SSH permissions"
+  else
+    echo $output | grep -q "Client.InvalidPermission.Duplicate"
+    if [ $? -eq 0 ]; then
+      log "SSH permissions already exist"
+    else
+      die $exit_code "$output"
+    fi
+  fi
+}
+
+function create_ssh_keypair() {
+  local random=`mktemp -u | cut -d'.' -f2`
+  ssh_key_name="suse-studio.$random"
+
+  log "Creating SSH keypair $ssh_key_name in $region..."
+  ec2-add-keypair $ssh_key_name --region $region > $ssh_key_name
+  exit_if_failed
+
+  chmod 600 $ssh_key_name
+}
+
+function start_instance() {
+  find_ami
+  log "Starting new instance ($ami)..."
+  output=`ec2-run-instances $ami --region "$region" -k "$ssh_key_name" -g "SUSE_Studio" -t t1.micro 2>&1`
+  exit_if_failed
+  instance=`echo $output | cut -d' ' -f6`
+  zone=`echo $output | cut -d' ' -f13`
+  if [ ! "$instance" ]; then
+    log "Failed to start instance:"
+    echo $output
+    exit 1
+  fi
+  if [ ! "$zone" ]; then
+    log "Failed to get instance availability zone"
+    exit 1
+  fi
+  log "Started $instance in $zone"
+}
+
+function wait_for_hostname_and_volume() {
+  log "Waiting for hostname..." -n
+  for i in {1..10}; do
+    output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
+    exit_if_failed
+    hostname=`echo $output | cut -d' ' -f8`
+    root_volume=`echo $output | sed "s/.*BLOCKDEVICE \/dev\/sda1 vol-\([0-9a-zA-Z]*\) .*/vol-\1/"`
+    if [ "$hostname" ] && [ ! "$hostname" = "pending" ]; then
+      break
+    fi
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$hostname" ] || [ "$hostname" = "pending" ] ; then
+    log "Failed to get hostname (timed out)"
+    exit 1
+  fi
+  log "Hostname is $hostname"
+}
+
+function wait_for_ssh() {
+  local ssh_err=.ssh_error
+  log "Waiting for instance boot and SSH..." -n
+  output=""
+  for i in {1..50}; do
+    output=`ssh -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -o "BatchMode yes" -o "ConnectTimeout 10" root@$hostname "echo 'hi'" 2>$ssh_err`
+    [ "$output" = "hi" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+
+  # Check if we have timed out
+  if [ ! "$output" = "hi" ]; then
+    log "Failed to connect via SSH (timed out)"
+    [ -f $ssh_err ] && cat $ssh_err
+    clean_up
+    exit 1
+  fi
+}
+
+function create_and_attach_volume() {
+  local volume_size=10
+  log "Creating ${volume_size}G EBS image volume in $zone..."
+  output=`ec2-create-volume --region "$region" -s $volume_size -z $zone 2>&1`
+  exit_if_failed
+  image_volume=`echo $output | cut -d' ' -f2`
+  if [ ! "$image_volume" ]; then
+    log "Failed to create EBS volume"
+    exit 1
+  fi
+  log "Created $image_volume"
+
+  log "Attaching image volume..."
+  output=`ec2-attach-volume --region "$region" $image_volume -i $instance -d /dev/sdi 2>&1`
+  exit_if_failed
+}
+
+function upload_image_to_instance() {
+  log "Uploading image..."
+  scp -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" $tarball root@$hostname:
+  exit_if_failed
+}
+
+function ssh_exec() {
+  local cmd=$1
+  local output=`ssh -q -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$hostname "$cmd" 2>&1`
+  local code=$?
+  if [ $code -ne 0 ]; then
+    log "ssh_exec: $cmd"
+    die $code "$output"
+  fi
+}
+
+function write_image_to_volume() {
+  log "Extracting image (may take a few minutes)..."
+  local filename=`basename $tarball`
+  ssh_exec "tar xf '$filename'"
+
+  log "Writing image to $image_volume (may take a few minutes)..."
+  local image_file=${filename%.*.*.*}
+  local dir=`echo $image_file | sed -e "s/\.x86_64-/-/;s/\.i686-/-/"`
+  ssh_exec "cd "$dir" && dd_rescue -a "$image_file" /dev/sdi"
+}
+
+function stop_instance() {
+  log "Stopping instance $instance..." -n
+  output=`ec2-stop-instances --region $region $instance 2>&1`
+  exit_if_failed
+
+  for i in {1..10}; do
+    output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f8`
+    [ "$state" = "stopped" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" = "stopped" ]; then
+    log "Failed to stop instance (timed out)"
+    exit 1
+  fi
+}
+
+function reattach_volumes() {
+  log "Detaching root volume $root_volume..." -n
+  output=`ec2-detach-volume --region $region $root_volume -i $instance 2>&1`
+  exit_if_failed
+  echo ""
+
+  log "Detaching image volume $image_volume..." -n
+  output=`ec2-detach-volume --region $region $image_volume -i $instance 2>&1`
+  exit_if_failed
+  for i in {1..10}; do
+    output=`ec2-describe-volumes --region $region $root_volume 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f6`
+    [ "$state" = "available" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" = "available" ]; then
+    log "Failed to detach $root_volume"
+    exit 1
+  fi
+
+  log "Attaching $image_volume as root volume..." -n
+  output=`ec2-attach-volume --region $region $image_volume -i $instance -d /dev/sda1 2>&1`
+  exit_if_failed
+  for i in {1..10}; do
+    output=`ec2-describe-volumes --region $region $image_volume 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f11`
+    [ "$state" = "attached" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" = "attached" ]; then
+    log "Failed to attach $image_volume"
+    exit 1
+  fi
+}
+
+function create_image() {
+  log "Creating AMI with name='$name'..."
+  output=`ec2-create-image --region $region $instance -n "$name" -d "$description" 2>&1`
+  if [ $? -ne 0 ]; then
+    # probably failed due to name clash. try with appended timestamp.
+    local time=`date +%H%M%S`
+    log "Creating AMI with name='$name-$time'..."
+    output=`ec2-create-image --region $region $instance -n "$name-$time" -d "$description" 2>&1`
+  fi
+  exit_if_failed
+  new_ami=`echo $output | cut -d' ' -f2`
+  if [ ! "$new_ami" ]; then
+    log "Failed to get AMI ID"
+    clean_up
+    exit 10
+  fi
+  log "Created $new_ami"
+}
+
+function clean_up() {
+  log "Cleaning up..."
+  if [ "$instance" ]; then
+    log "Terminating instance $instance..." -n
+    output=`ec2-terminate-instances --region "$region" $instance 2>&1`
+    for i in {1..10}; do
+      output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
+      state=`echo $output | cut -d' ' -f8`
+      [ "$state" = "terminated" ] && break
+      sleep 3
+      echo -n "."
+    done
+    echo ""
+    if [ ! "$state" = "terminated" ]; then
+      log "Failed to terminate instance (timed out)"
+    fi
+  fi
+
+  if [ "$root_volume" ]; then
+    log "Removing root volume $root_volume..."
+    output=`ec2-delete-volume --region "$region" $root_volume 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Failed to remove $root_volume"
+      echo $output
+    fi
+  fi
+
+  if [ "$image_volume" ]; then
+    log "Removing image volume $image_volume..."
+    output=`ec2-delete-volume --region "$region" $image_volume 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Failed to remove $image_volume"
+      echo $output
+    fi
+  fi
+
+  if [ "$ssh_key_name" ]; then
+    log "Removing SSH keypair $ssh_key_name..."
+    output=`ec2-delete-keypair $ssh_key_name --region "$region" 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Failed to remove SSH keypair"
+      echo $output
+    fi
+    rm -f $ssh_key_name
+  fi
+}
+
+function finish() {
+  log "Created new EBS-backed AMI. May take several minutes for it to be ready."
+  log "AMI: $new_ami, region: $region."
+}
+
+# Parse and set options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --region)      region="$2";      shift;;
+    --name)        name="$2";        shift;;
+    --description) description="$2"; shift;;
+    --tarball)     tarball="$2";     shift;;
+    -h)     usage; exit 1;;
+    --help) usage; exit 1;;
+    --) shift; break;;
+    -*) echo >&2 "Error: Invalid option \"$1\"";   echo; usage; exit 1;;
+    *)  echo >&2 "Error: Invalid argument \"$1\""; echo; usage; exit 1;;
+  esac
+  shift
+done
+
+check_ec2_tools
+check_credentials
+create_security_group
+create_ssh_keypair
+start_instance
+wait_for_hostname_and_volume
+create_and_attach_volume
+wait_for_ssh
+upload_image_to_instance
+write_image_to_volume
+stop_instance
+reattach_volumes
+create_image
+clean_up
+finish
