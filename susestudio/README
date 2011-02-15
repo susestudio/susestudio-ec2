@@ -24,8 +24,31 @@ environment variables to be defined:
   $EC2_CERT        - Path to EC2 X.509 certification (eg. ~/cert-aws.pem)
   $EC2_PRIVATE_KEY - Path to EC2 private key (eg. ~/pk-ec2.pem)
 
-If you don't already have one, you also have to create your SSH keypair in Amazon first,
-because the password based authentication is automatically disabled.
+We recommend setting these variables in your ~/.profile file so that you don't have to
+set them up manually each time, eg: 
+export AWS_USER_ID=123456789012
+export AWS_ACCESS_KEY=ABCDEFGHIJKLMNOPQRST 
+export AWS_SECRET_KEY=abcdefghijklmnoprqrtuvwxyzabcdv 
+export EC2_CERT=~/cert-aws.pem 
+export EC2_PRIVATE_KEY=~/pk-ec2.pem 
+
+Now create your AMI with the specific Amazon region (us-west-1, us-east-1, eu-west-1, 
+ap-southeast-1...), eg:
+./create_ami.sh --region eu-west-1
+
+One way to launch new instances of your AMI is with the command line tools, eg:
+ec2-run-instances ami-6a380d1e -t m1.small --region eu-west-1 -k bbrunner-eu
+You'll want to create your SSH keypair in Amazon first if you don't already have
+one (specified by the -k option) as password based authentication is
+automatically disabled.
+Wait for the instance to boot and check for it's DNS name with ec2-describe-instances, 
+and then you can ssh into it once it fully boots up, eg: 
+ssh -i ~/ec2-eu root@ec2-46-51-133-248.eu-west-1.compute.amazonaws.com
+Don't forget to terminate the instance when you're done, eg: 
+ec2-terminate-instances
+
+Other way to manage your Amazon EC2 and S3 accounts, is using ElasticFox and S3Fox
+Firefox plugins.
 
 Send your bug reports, questions, feedback, and suggestions to
 feedback@susestudio.com.
