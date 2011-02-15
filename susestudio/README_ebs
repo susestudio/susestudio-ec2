@@ -23,6 +23,9 @@ environment variables to be defined:
   $EC2_CERT        - Path to EC2 X.509 certification (eg. ~/cert-aws.pem)
   $EC2_PRIVATE_KEY - Path to EC2 private key (eg. ~/pk-ec2.pem)
 
+If you don't already have one, you also have to create your SSH keypair in Amazon first,
+because the password based authentication is automatically disabled.
+
 Send your bug reports, questions, feedback, and suggestions to
 feedback@susestudio.com.
 
