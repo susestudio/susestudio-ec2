@@ -94,39 +94,27 @@ function find_ami() {
   case "$base" in
     "SLES10_SP3")
       case "$region" in
-        us-east-1)
-          [ "$arch" = "i386"   ] && ami=ami-16a3577f
-          [ "$arch" = "x86_64" ] && ami=ami-eea35787;;
-        us-west-1)
-          [ "$arch" = "i386"   ] && ami=ami-d61b4b93
-          [ "$arch" = "x86_64" ] && ami=ami-d21b4b97;;
-        eu-west-1)
-          [ "$arch" = "i386"   ] && ami=ami-60576214
-          [ "$arch" = "x86_64" ] && ami=ami-62576216;;
-        ap-southeast-1)
-          [ "$arch" = "i386"   ] && ami=ami-72146a20
-          [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
-        *)
-          log "Error: Unknown region '$region'"
-          exit 1;;
+        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-16a3577f
+                        [ "$arch" = "x86_64" ] && ami=ami-eea35787;;
+        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-d61b4b93
+                        [ "$arch" = "x86_64" ] && ami=ami-d21b4b97;;
+        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-60576214
+                        [ "$arch" = "x86_64" ] && ami=ami-62576216;;
+        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-72146a20
+                        [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
+        *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
     "SLES11_SP1")
       case "$region" in
-        us-east-1)
-          [ "$arch" = "i386"   ] && ami=ami-e0a35789
-          [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
-        us-west-1)
-          [ "$arch" = "i386"   ] && ami=ami-d01b4b95
-          [ "$arch" = "x86_64" ] && ami=ami-dc1b4b99;;
-        eu-west-1)
-          [ "$arch" = "i386"   ] && ami=ami-6c576218
-          [ "$arch" = "x86_64" ] && ami=ami-6e57621a;;
-        ap-southeast-1)
-          [ "$arch" = "i386"   ] && ami=ami-76146a24
-          [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
-        *)
-          log "Error: Unknown region '$region'"
-          exit 1;;
+        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-e0a35789
+                        [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
+        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-d01b4b95
+                        [ "$arch" = "x86_64" ] && ami=ami-dc1b4b99;;
+        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-6c576218
+                        [ "$arch" = "x86_64" ] && ami=ami-6e57621a;;
+        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-76146a24
+                        [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
+        *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
     *)
       log "Error: Unknown base system '$base'"
