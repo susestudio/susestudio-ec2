@@ -218,7 +218,8 @@ function wait_for_hostname_and_volume() {
 }
 
 function wait_for_ssh() {
-  local ssh_err=.ssh_error
+  local random=`mktemp -u | cut -d'.' -f2`
+  local ssh_err=".ssh_error.$random"
   log "Waiting for instance boot and SSH..." -n
   output=""
   for i in {1..50}; do
