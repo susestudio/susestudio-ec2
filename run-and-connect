@@ -68,8 +68,13 @@ function create_ssh_keypair() {
 }
 
 function start_instance() {
-  log "Starting new instance..."
-  output=`ec2-run-instances $ami --region "$region" -k "$ssh_key_name" -g "SUSE_Studio" -t t1.micro 2>&1`
+  log "Starting new instance ($root_device)..."
+  if [ "$root_device" = "instance-store" ]; then
+    instance_type=m1.small
+  else
+    instance_type=t1.micro
+  fi
+  output=`ec2-run-instances $ami --region "$region" -k "$ssh_key_name" -g "SUSE_Studio" -t $instance_type 2>&1`
   exit_if_failed
   instance=`echo $output | cut -d' ' -f6`
   if [ ! "$instance" ]; then
@@ -86,6 +91,7 @@ function wait_for_ami() {
     output=`ec2-describe-images --region "$region" "$ami" 2>&1`
     exit_if_failed
     state=`echo $output | cut -d' ' -f5`
+    root_device=`echo $output | cut -d' ' -f10`
     [ "$state" ] && [ "$state" = "available" ] && break
     sleep 3
     echo -n "."
