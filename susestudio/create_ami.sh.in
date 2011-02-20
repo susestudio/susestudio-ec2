@@ -20,20 +20,32 @@ bucket={BUCKET}
 image={IMAGE}
 instance_type={INSTANCE_TYPE}
 prefix={APP_NAME}
+name={APP_NAME}
 
 # Defaults
 region=us-east-1
+description="Built by SUSE Studio"
+should_test_ami=false
+make_public=false
+
 
 function usage() {
   echo "Usage: create_ami.sh [--region REGION] [--bucket BUCKET] ..."
   echo "Bundles, uploads, and registers the associated image to Amazon EC2."
   echo
-  echo "Options:"
-  echo "  --region REGION     The region to upload and register in [us-east-1, us-west-1,"
-  echo "                      eu-west-1, ap-southeast-1]. Default is us-east-1."
-  echo "  --bucket BUCKET     Name of bucket to upload to. Default is $bucket."
-  echo "  --prefix PREFIX     Prefix of image manifest. Default is $prefix."
-  echo "  --image  IMAGE      Path to image file. Default is $image."
+  echo "General options:"
+  echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
+  echo "                       eu-west-1, ap-southeast-1]. Default is '$region'."
+  echo "  --name NAME          AMI name. Must be unique. Default is '$name'."
+  echo "  --description TEXT   AMI description. Default is '$description'."
+  echo
+  echo "Advanced options:"
+  echo "  --arch ARCH          System architecture [i386, x86_64]. Default is '$arch'."
+  echo "  --bucket BUCKET      Name of bucket to upload to. Default is '$bucket'."
+  echo "  --prefix PREFIX      Prefix of image manifest. Default is '$prefix'."
+  echo "  --image IMAGE        Path to image file. Default is '$image'."
+  echo "  --test_ami           Test the resulting AMI by launching and SSH into it."
+  echo "  --public             Make the resulting AMI public."
 }
 
 function check_ec2_tools() {
@@ -93,6 +105,13 @@ function bundle_image() {
   echo
 }
 
+function log() {
+  local msg=$1
+  local opts=$2
+  local time=`date +%H:%M:%S`
+  echo $opts "$time $msg"
+}
+
 function upload_bundle() {
   echo "** Running ec2-upload-bundle..."
   ec2-upload-bundle -b "$bucket" -m "$tmp_dir/$prefix.manifest.xml" -a $AWS_ACCESS_KEY \
@@ -103,29 +122,46 @@ function upload_bundle() {
 
 function register_ami() {
   echo "** Running ec2-register..."
-  ami_id=$(ec2-register "$bucket/$prefix.manifest.xml" --region $region | cut -f2)
+  ami_id=$(ec2-register "$bucket/$prefix.manifest.xml" --region $region --name "$name" --description "$description" | cut -f2)
   echo
   if [ "$ami_id" ]; then
     # Clean up
     rm -rf "$tmp_dir"
     echo "Done! You can launch your AMI ($ami_id) with the following command:"
     echo "  ec2run $ami_id -K $EC2_PRIVATE_KEY -C $EC2_CERT -t $instance_type --region $region -k <KEYPAIR>"
-    exit 0
   else
     echo >&2 "FATAL: Failed to register AMI"
     exit 5
   fi
 }
 
+function test_ami() {
+  log "Testing AMI..."
+  run-and-connect --self_test --region $region $ami_id
+  exit_if_failed
+}
+
+function make_ami_public() {
+  log "Making $ami_id public..."
+  output=`ec2-modify-image-attribute --region $region -l -a all $ami_id 2>&1`
+  if [ $? -ne 0 ]; then
+    log "Failed to make AMI public."
+  fi
+}
+
 # Parse and set options
 while [ $# -gt 0 ]; do
   case "$1" in
-    --region) region="$2"; shift;;
-    --bucket) bucket="$2"; shift;;
-    --prefix) prefix="$2"; shift;;
-    --image)   image="$2"; shift;;
-    -h)     usage; exit 1;;
-    --help) usage; exit 1;;
+    --arch)        shift; arch="$1";;
+    --bucket)      shift; bucket="$1";;
+    --description) shift; description="$1";;
+    --image)       shift; image="$1";;
+    --name)        shift; name="$1";;
+    --prefix)      shift; prefix="$1";;
+    --region)      shift; region="$1";;
+    --test_ami)    should_test_ami=true;;
+    --public)      make_public=true;;
+    -h | --help)   usage; exit 1;;
     --) shift; break;;
     -*) echo >&2 "FATAL: Invalid option \"$1\"";   echo; usage; exit 1;;
     *)  echo >&2 "FATAL: Invalid argument \"$1\""; echo; usage; exit 1;;
@@ -139,4 +175,14 @@ set_location_and_aki_id
 bundle_image
 upload_bundle
 register_ami
+
+if [ "$should_test_ami" = true ]; then
+  test_ami
+fi
+
+if [ "$make_public" = true ]; then
+  make_ami_public
+fi
+
+log "Done"
 
