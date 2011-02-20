@@ -21,18 +21,26 @@ tarball=../{TARBALL}
 # Defaults
 region=us-east-1
 description="Built by SUSE Studio"
+volume_size=10
 
 
 function usage() {
   echo "Usage: create_ebs_ami.sh [--region REGION] ..."
   echo "Uploads and creates an EBS backed EC2 Amazon Machine Image (AMI) in Amazon Web Services (AWS)."
   echo
-  echo "Options:"
+  echo "Report bugs to https://github.com/jamestyj/susestudio-ec2/issues."
+  echo
+  echo "General options:"
   echo "  --region REGION          The region to upload and register in [us-east-1, us-west-1,"
   echo "                           eu-west-1, ap-southeast-1]. Default is 'us-east-1'."
   echo "  --name NAME              AMI name. Must be unique. Default is '$name'."
   echo "  --description TEXT       AMI description. Default is '$description'."
+  echo
+  echo "Advanced options:"
+  echo "  --arch ARCH              System architecture [i386, x86_64]. Default is '$arch'."
+  echo "  --base BASE_SYSTEM       Base system [SLES10_SP3, SLES11_SP1]. Default is '$base'."
   echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
+  echo "  --volume_size SIZE       Root volume size, in GB. Default is $volume_size."
 }
 
 function check_ec2_tools() {
@@ -233,7 +241,6 @@ function wait_for_ssh() {
 }
 
 function create_and_attach_volume() {
-  local volume_size=10
   log "Creating ${volume_size}G EBS image volume in $zone..."
   output=`ec2-create-volume --region "$region" -s $volume_size -z $zone 2>&1`
   exit_if_failed
@@ -411,12 +418,14 @@ function finish() {
 # Parse and set options
 while [ $# -gt 0 ]; do
   case "$1" in
-    --region)      region="$2";      shift;;
-    --name)        name="$2";        shift;;
-    --description) description="$2"; shift;;
-    --tarball)     tarball="$2";     shift;;
-    -h)     usage; exit 1;;
-    --help) usage; exit 1;;
+    --arch)        shift; arch="$1";;
+    --base)        shift; base="$1";;
+    --description) shift; description="$1";;
+    --name)        shift; name="$1";;
+    --region)      shift; region="$1";;
+    --tarball)     shift; tarball="$1";;
+    --volume_size) shift; volume_size="$1";;
+    -h | --help)   usage; exit 1;;
     --) shift; break;;
     -*) echo >&2 "Error: Invalid option \"$1\"";   echo; usage; exit 1;;
     *)  echo >&2 "Error: Invalid argument \"$1\""; echo; usage; exit 1;;
