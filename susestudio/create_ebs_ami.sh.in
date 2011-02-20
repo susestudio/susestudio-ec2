@@ -38,7 +38,7 @@ function usage() {
   echo
   echo "Advanced options:"
   echo "  --arch ARCH              System architecture [i386, x86_64]. Default is '$arch'."
-  echo "  --base BASE_SYSTEM       Base system [SLES10_SP3, SLES11_SP1]. Default is '$base'."
+  echo "  --base BASE_SYSTEM       Base system [11.3, SLES10_SP3, SLES11_SP1]. Default is '$base'."
   echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
   echo "  --volume_size SIZE       Root volume size, in GB. Default is $volume_size."
 }
@@ -47,7 +47,8 @@ function check_ec2_tools() {
   for cmd in ec2-attach-volume ec2-create-image ec2-create-volume ec2-delete-volume \
     ec2-describe-instances ec2-describe-volumes ec2-detach-volume ec2-run-instances \
     ec2-stop-instances ec2-terminate-instances ec2-describe-group ec2-authorize \
-    ec2-add-keypair ec2-delete-keypair; do
+    ec2-add-keypair ec2-delete-keypair ec2-create-snapshot ec2-register \
+    ec2-describe-snapshots; do
     type $cmd >/dev/null 2>&1
     if [ $? -ne 0 ]; then
       log "Cannot find required command '$cmd'. See README for more information."
@@ -104,7 +105,9 @@ function find_ami() {
                         [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
-    "SLES11_SP1")
+
+    # No public openSUSE 11.3 EBS AMIs yet, so use SLES11_SP1.
+    "11.3" | "SLES11_SP1")
       case "$region" in
         us-east-1)      [ "$arch" = "i386"   ] && ami=ami-e0a35789
                         [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
@@ -192,18 +195,25 @@ function wait_for_hostname_and_volume() {
     output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
     exit_if_failed
     hostname=`echo $output | cut -d' ' -f8`
-    root_volume=`echo $output | sed "s/.*BLOCKDEVICE \/dev\/sda1 vol-\([0-9a-zA-Z]*\) .*/vol-\1/"`
-    if [ "$hostname" ] && [ ! "$hostname" = "pending" ]; then
-      break
-    fi
+    [ "$hostname" ] && [ ! "$hostname" = "pending" ] && break
     sleep 3
     echo -n "."
   done
   echo ""
+
   if [ ! "$hostname" ] || [ "$hostname" = "pending" ] ; then
     log "Failed to get hostname (timed out)"
     exit 1
   fi
+
+  if [ "$isOpenSUSE" = false ]; then
+    root_volume=`echo ${output#*\/dev\/sda1} | cut -d' ' -f1`
+    if [ ! "$root_volume" ]; then
+      die 1 "Failed to get root volume."
+    fi
+    log "Root volume is $root_volume"
+  fi
+
   log "Hostname is $hostname"
 }
 
@@ -262,17 +272,40 @@ function ssh_exec() {
 }
 
 function write_image_to_volume() {
-  log "Extracting image (may take a few minutes)..."
+  log "Extracting image..."
   local filename=`basename $tarball`
   ssh_exec "tar xf '$filename'"
 
-  log "Writing image to $image_volume (may take a few minutes)..."
+  log "Writing image to $image_volume..."
   local image_file=${filename%.*.*.*}
   local dir=`echo $image_file | sed -e "s/\.x86_64-/-/;s/\.i686-/-/"`
   ssh_exec "cd "$dir" && dd_rescue -a "$image_file" /dev/sdi"
 }
 
-function stop_instance() {
+function opensuse_create_snapshot() {
+  log "Creating snapshot from $image_volume..."
+  output=`ec2-create-snapshot --region $region $image_volume 2>&1`
+  exit_if_failed
+  snapshot=`echo $output | cut -d' ' -f2`
+
+  log "Waiting for snapshot $snapshot to finish (may take a few minutes)..." -n
+  for i in {1..100}; do
+    output=`ec2-describe-snapshots --region $region $snapshot 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f4`
+    [ "$state" = "completed" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" = "completed" ]; then
+    log "Failed to create snapshot $snapshot"
+    clean_up
+    exit 1
+  fi
+}
+
+function sles_stop_instance() {
   log "Stopping instance $instance..." -n
   output=`ec2-stop-instances --region $region $instance 2>&1`
   exit_if_failed
@@ -292,7 +325,28 @@ function stop_instance() {
   fi
 }
 
-function reattach_volumes() {
+function opensuse_detach_volume() {
+  log "Detaching image volume $image_volume..." -n
+  output=`ec2-detach-volume --region $region $image_volume -i $instance 2>&1`
+  exit_if_failed
+
+  for i in {1..40}; do
+    output=`ec2-describe-volumes --region $region $image_volume 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f5`
+    [ "$state" = "available" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" = "available" ]; then
+    log "Failed to detach $image_volume"
+    clean_up
+    exit 1
+  fi
+}
+
+function sles_reattach_volumes() {
   log "Detaching root volume $root_volume..." -n
   output=`ec2-detach-volume --region $region $root_volume -i $instance 2>&1`
   exit_if_failed
@@ -301,6 +355,7 @@ function reattach_volumes() {
   log "Detaching image volume $image_volume..." -n
   output=`ec2-detach-volume --region $region $image_volume -i $instance 2>&1`
   exit_if_failed
+
   for i in {1..10}; do
     output=`ec2-describe-volumes --region $region $root_volume 2>&1`
     exit_if_failed
@@ -334,6 +389,34 @@ function reattach_volumes() {
 }
 
 function create_image() {
+  if [ "$isOpenSUSE" = true ]; then
+    opensuse_create_image
+  else
+    sles_create_image
+  fi
+  new_ami=`echo $output | cut -d' ' -f2`
+  if [ ! "$new_ami" ]; then
+    log "Failed to get AMI ID"
+    clean_up
+    exit 10
+  fi
+  log "Created $new_ami"
+}
+
+function opensuse_create_image() {
+  opensuse_set_aki_id
+  log "Registering $snapshot as an AMI with name='$name'..."
+  output=`ec2-register --region $region -a $arch -n "$name" -d "$description" -s $snapshot --kernel $aki_id 2>&1`
+  if [ $? -ne 0 ]; then
+    # probably failed due to name clash. try with appended timestamp.
+    local time=`date +%H%M%S`
+    log "Registering snapshot $snapshot as an AMI with name='$name-$time'..."
+    output=`ec2-register --region $region -a $arch -n "$name-$time" -d "$description" -s $snapshot --kernel $aki_id 2>&1`
+  fi
+  exit_if_failed
+}
+
+function sles_create_image() {
   log "Creating AMI with name='$name'..."
   output=`ec2-create-image --region $region $instance -n "$name" -d "$description" 2>&1`
   if [ $? -ne 0 ]; then
@@ -343,13 +426,17 @@ function create_image() {
     output=`ec2-create-image --region $region $instance -n "$name-$time" -d "$description" 2>&1`
   fi
   exit_if_failed
-  new_ami=`echo $output | cut -d' ' -f2`
-  if [ ! "$new_ami" ]; then
-    log "Failed to get AMI ID"
-    clean_up
-    exit 10
-  fi
-  log "Created $new_ami"
+}
+
+function opensuse_set_aki_id() {
+  case "$region" in
+    us-east-1)      aki_id=aki-407d9529; [ "$arch" = "x86_64" ] && aki_id=aki-427d952b;;
+    us-west-1)      aki_id=aki-99a0f1dc; [ "$arch" = "x86_64" ] && aki_id=aki-9ba0f1de;;
+    eu-west-1)      aki_id=aki-4deec439; [ "$arch" = "x86_64" ] && aki_id=aki-4feec43b;;
+    ap-southeast-1) aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
+    *) log "Error: Unknown region '$region'"; exit 1;
+  esac
+  log "Using PV-GRUB ($aki_id)"
 }
 
 function clean_up() {
@@ -388,6 +475,15 @@ function clean_up() {
     fi
   fi
 
+  if [ "$snapshot" ] && [ ! "$new_ami" ]; then
+    log "Removing snapshot $snapshot..."
+    output=`ec2-delete-snapshot --region "$region" $snapshot 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Failed to remove $snapshot"
+      echo $output
+    fi
+  fi
+
   if [ "$ssh_key_name" ]; then
     log "Removing SSH keypair $ssh_key_name..."
     output=`ec2-delete-keypair $ssh_key_name --region "$region" 2>&1`
@@ -422,6 +518,9 @@ while [ $# -gt 0 ]; do
   shift
 done
 
+isOpenSUSE=true
+[[ "$base" =~ SLES ]] && isOpenSUSE=false
+
 check_ec2_tools
 check_credentials
 create_security_group
@@ -432,8 +531,15 @@ create_and_attach_volume
 wait_for_ssh
 upload_image_to_instance
 write_image_to_volume
-stop_instance
-reattach_volumes
+
+if [ "$isOpenSUSE" = true ]; then
+  opensuse_detach_volume
+  opensuse_create_snapshot
+else
+  sles_stop_instance
+  sles_reattach_volumes
+fi
+
 create_image
 clean_up
 finish
