@@ -1,0 +1,211 @@
+#!/bin/bash
+# ============================================================================
+# Script for launching the specified Amazon Machine Image (AMI) and connecting
+# to it via SSH. Automatically terminates upon logout from the EC2 instance.
+#
+# See script usage for more details.
+#
+# Example script run and output:
+#   jamestyj@sentosa:~> run-and-connect ami-bdd3e7c9
+#   10:19:57 Creating SSH keypair suse-studio.DO0fSzzp7m in eu-west-1...
+#   10:20:01 Waiting for AMI...
+#   10:20:05 Starting new instance...
+#   10:20:09 Started i-eb8a779d
+#   10:20:09 Waiting for hostname......
+#   10:20:31 Hostname is ec2-46-137-26-197.eu-west-1.compute.amazonaws.com
+#   10:20:31 Waiting for instance boot and SSH....
+#   Warning: Permanently added 'ec2-46-137-26-197.eu-west-1.compute.amazonaws.com,46.137.26.197' (RSA) to the list of known hosts.
+#
+#     __|  __|_  )  SUSE Linux Enterprise
+#     _|  (     /       Server 11 SP1
+#    ___|\___|___|     x86_64 (64-bit)
+#
+#   For more information about using SUSE Linux Enterprise Server please see
+#   http://www.novell.com/documentation/sles11/
+#
+#   Have a lot of fun...
+#   ip-10-234-223-220:~ # logout
+#   Connection to ec2-46-137-26-197.eu-west-1.compute.amazonaws.com closed.
+#   10:21:02 Cleaning up...
+#   10:21:02 Removing SSH keypair suse-studio.DO0fSzzp7m...
+#   10:21:05 Terminating instance i-eb8a779d...
+#   10:21:09 Bye
+#
+# Version: 1.0.0
+# Author:  James Tan <jatan@suse.de>
+# Contact: feedback@susestudio.com
+# ============================================================================
+
+region=eu-west-1
+
+function usage() {
+  echo "Usage: run-and-connect [--region REGION] AMI_ID"
+  echo
+  echo "Launches and connects to the specified AMI in the specified region."
+  echo
+  echo "Script creates a one-time SSH keypair, waits for the AMI to be available,"
+  echo "launches the instance, waits for it to boot, then SSHs into it. It"
+  echo "automatically terminates the EC2 instanceand removes the created SSH"
+  echo "keypair on logout."
+  echo
+  echo "Report bugs to https://github.com/jamestyj/susestudio-ec2/issues."
+  echo
+  echo "Options:"
+  echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
+  echo "                       eu-west-1, ap-southeast-1]. Default is '$region'."
+  echo "  --help               Display this help and exit."
+}
+
+function create_ssh_keypair() {
+  local random=`mktemp -u | cut -d'.' -f2`
+  ssh_key_name="suse-studio.$random"
+
+  log "Creating SSH keypair $ssh_key_name in $region..."
+  ec2-add-keypair $ssh_key_name --region $region > $ssh_key_name
+  exit_if_failed
+
+  chmod 600 $ssh_key_name
+}
+
+function start_instance() {
+  log "Starting new instance..."
+  output=`ec2-run-instances $ami --region "$region" -k "$ssh_key_name" -g "SUSE_Studio" -t t1.micro 2>&1`
+  exit_if_failed
+  instance=`echo $output | cut -d' ' -f6`
+  if [ ! "$instance" ]; then
+    log "Failed to start instance:"
+    echo $output
+    exit 1
+  fi
+  log "Started $instance"
+}
+
+function wait_for_ami() {
+  log "Waiting for AMI..." -n
+  for i in {1..100}; do
+    output=`ec2-describe-images --region "$region" "$ami" 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f5`
+    [ "$state" ] && [ "$state" = "available" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$state" ] || [ ! "$state" = "available" ]; then
+    log "Failed to get available AMI (timed out)"
+    exit 1
+  fi
+}
+
+function wait_for_hostname() {
+  log "Waiting for hostname..." -n
+  for i in {1..10}; do
+    output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
+    exit_if_failed
+    hostname=`echo $output | cut -d' ' -f8`
+
+    if [ "$hostname" ] && [ ! "$hostname" = "pending" ]; then
+      break
+    fi
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+  if [ ! "$hostname" ] || [ "$hostname" = "pending" ] ; then
+    log "Failed to get hostname (timed out)"
+    exit 1
+  fi
+  log "Hostname is $hostname"
+}
+
+function wait_for_ssh() {
+  local ssh_err=.ssh_error
+  log "Waiting for instance boot and SSH..." -n
+  output=""
+  for i in {1..50}; do
+    output=`ssh -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" -o "BatchMode yes" -o "ConnectTimeout 10" root@$hostname "echo 'hi'" 2>$ssh_err`
+    [ "$output" = "hi" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+
+  # Check if we have timed out
+  if [ ! "$output" = "hi" ]; then
+    log "Failed to connect via SSH (timed out)"
+    [ -f $ssh_err ] && cat $ssh_err
+    clean_up
+    exit 1
+  fi
+}
+
+function exit_if_failed() {
+  local code=$?
+  local newline=$1
+  if [ $code -ne 0 ]; then
+    [ "$newline" ] && echo ""
+    die $code "$output"
+  fi
+}
+
+function die() {
+  local code=$1
+  local output=$2
+  log "Failed (exit code $code)"
+  [ "$output" ] && echo "$output"
+  clean_up
+  exit 10
+}
+
+function log() {
+  local msg=$1
+  local opts=$2
+  local time=`date +%H:%M:%S`
+  echo $opts "$time $msg"
+}
+
+function clean_up() {
+  log "Cleaning up..."
+  if [ "$ssh_key_name" ]; then
+    log "Removing SSH keypair $ssh_key_name..."
+    output=`ec2-delete-keypair $ssh_key_name --region "$region" 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Failed to remove SSH keypair"
+      echo $output
+    fi
+    rm -f $ssh_key_name
+  fi
+  if [ "$instance" ]; then
+    log "Terminating instance $instance..."
+    output=`ec2-terminate-instances --region "$region" $instance 2>&1`
+    if [ $? -ne 0 ]; then
+      log "Termination failed."
+    fi
+  fi
+  log "Bye"
+}
+
+# Parse and set options
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --region)  shift; region="$1";;
+    -h|--help) usage; exit 1;;
+    *)         break;;
+  esac
+  shift
+done
+
+if [ $# -ne 1 ]; then
+  usage
+  exit 1
+fi
+
+ami=$1
+
+create_ssh_keypair
+wait_for_ami
+start_instance
+wait_for_hostname
+wait_for_ssh
+ssh -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$hostname
+clean_up
