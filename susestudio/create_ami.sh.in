@@ -57,22 +57,19 @@ function check_credentials() {
 
 function set_location_and_aki_id() {
   # Figure out the location and PV-GRUB AKI from region.
-  # Also appends location to bucket name if outside of US.
+  bucket="$bucket-$region"
   case "$region" in
     us-east-1)
       location=US
       aki_id=aki-407d9529; [ "$arch" = "x86_64" ] && aki_id=aki-427d952b;;
     us-west-1)
       location="$region"
-      bucket="$bucket-us-west"
       aki_id=aki-99a0f1dc; [ "$arch" = "x86_64" ] && aki_id=aki-9ba0f1de;;
     eu-west-1)
       location=EU
-      bucket="$bucket-eu"
       aki_id=aki-4deec439; [ "$arch" = "x86_64" ] && aki_id=aki-4feec43b;;
     ap-southeast-1)
       location="$region"
-      bucket="$bucket-ap"
       aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
     *) echo >&2 "FATAL: Unknown region \"$region\""; exit 4;
   esac
