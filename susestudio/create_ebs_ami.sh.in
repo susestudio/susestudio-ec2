@@ -22,6 +22,8 @@ tarball=../{TARBALL}
 region=us-east-1
 description="Built by SUSE Studio"
 volume_size=10
+should_test_ami=false
+make_public=false
 
 
 function usage() {
@@ -41,6 +43,8 @@ function usage() {
   echo "  --base BASE_SYSTEM       Base system [11.3, SLES10_SP3, SLES11_SP1]. Default is '$base'."
   echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
   echo "  --volume_size SIZE       Root volume size, in GB. Default is $volume_size."
+  echo "  --test_ami               Test the resulting AMI by launching and SSH into it."
+  echo "  --public                 Make the resulting AMI public."
 }
 
 function check_ec2_tools() {
@@ -502,6 +506,20 @@ function finish() {
   log "AMI: $new_ami, region: $region."
 }
 
+function test_ami() {
+  log "Testing AMI..."
+  run-and-connect --self_test --region $region $new_ami
+  exit_if_failed
+}
+
+function make_ami_public() {
+  log "Making $new_ami public..."
+  output=`ec2-modify-image-attribute --region $region -l -a all $new_ami 2>&1`
+  if [ $? -ne 0 ]; then
+    log "Failed to make AMI public."
+  fi
+}
+
 # Parse and set options
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -512,6 +530,8 @@ while [ $# -gt 0 ]; do
     --region)      shift; region="$1";;
     --tarball)     shift; tarball="$1";;
     --volume_size) shift; volume_size="$1";;
+    --test_ami)    should_test_ami=true;;
+    --public)      make_public=true;;
     -h | --help)   usage; exit 1;;
     --) shift; break;;
     -*) echo >&2 "Error: Invalid option \"$1\"";   echo; usage; exit 1;;
@@ -545,3 +565,13 @@ fi
 create_image
 clean_up
 finish
+
+if [ "$should_test_ami" = true ]; then
+  test_ami
+fi
+
+if [ "$make_public" = true ]; then
+  make_ami_public
+fi
+
+log "Done"
