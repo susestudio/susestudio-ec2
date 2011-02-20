@@ -53,6 +53,7 @@ function usage() {
   echo "Options:"
   echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
   echo "                       eu-west-1, ap-southeast-1]. Default is '$region'."
+  echo "  --self_test          Run self test on AMI instance and exit."
   echo "  --help               Display this help and exit."
 }
 
@@ -191,12 +192,25 @@ function clean_up() {
   log "Bye"
 }
 
+function ssh_exec() {
+  local cmd=$1
+  log "ssh_exec: $cmd"
+  ssh -q -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$hostname "$cmd"
+  local code=$?
+  if [ $code -ne 0 ]; then
+    log "ssh_exec failed with exit code $code"
+    exit $code
+  fi
+}
+
 # Parse and set options
+run_self_test=false
 while [ $# -gt 0 ]; do
   case "$1" in
-    --region)  shift; region="$1";;
-    -h|--help) usage; exit 1;;
-    *)         break;;
+    --region)    shift; region="$1";;
+    --self_test) run_self_test=true;;
+    -h|--help)   usage; exit 1;;
+    *) break;;
   esac
   shift
 done
@@ -213,5 +227,12 @@ wait_for_ami
 start_instance
 wait_for_hostname
 wait_for_ssh
-ssh -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$hostname
+
+if [ "$run_self_test" = true ]; then
+  ssh_exec "zypper -n refresh"
+else
+  ssh -i $ssh_key_name -o "StrictHostKeyChecking no" -o "UserKnownHostsFile /dev/null" root@$hostname
+fi
+
 clean_up
+exit 0
