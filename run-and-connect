@@ -92,13 +92,13 @@ function wait_for_ami() {
     exit_if_failed
     state=`echo $output | cut -d' ' -f5`
     root_device=`echo $output | cut -d' ' -f10`
-    [ "$state" ] && [ "$state" = "available" ] && break
+    [ "$state" ] && [ ! "$state" = "pending" ] && break
     sleep 3
     echo -n "."
   done
   echo ""
   if [ ! "$state" ] || [ ! "$state" = "available" ]; then
-    log "Failed to get available AMI (timed out)"
+    log "Failed to get available AMI"
     exit 1
   fi
 }
