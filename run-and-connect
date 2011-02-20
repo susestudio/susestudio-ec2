@@ -69,9 +69,10 @@ function create_ssh_keypair() {
 }
 
 function start_instance() {
-  log "Starting new instance ($root_device)..."
+  log "Starting new instance ($root_device, $arch)..."
   if [ "$root_device" = "instance-store" ]; then
     instance_type=m1.small
+    [ "$arch" = x86_64 ] && instance_type=m1.large
   else
     instance_type=t1.micro
   fi
@@ -92,6 +93,7 @@ function wait_for_ami() {
     output=`ec2-describe-images --region "$region" "$ami" 2>&1`
     exit_if_failed
     state=`echo $output | cut -d' ' -f5`
+    arch=`echo $output | cut -d' ' -f7`
     root_device=`echo $output | cut -d' ' -f10`
     [ "$state" ] && [ ! "$state" = "pending" ] && break
     sleep 3
