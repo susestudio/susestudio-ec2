@@ -238,6 +238,7 @@ function wait_for_ssh() {
     clean_up
     exit 1
   fi
+  rm -f $ssh_err
 }
 
 function create_and_attach_volume() {
