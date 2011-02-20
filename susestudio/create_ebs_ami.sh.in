@@ -223,6 +223,7 @@ function wait_for_ssh() {
   if [ ! "$output" = "hi" ]; then
     log "Failed to connect via SSH (timed out)"
     [ -f $ssh_err ] && cat $ssh_err
+    rm -f $ssh_err
     clean_up
     exit 1
   fi
