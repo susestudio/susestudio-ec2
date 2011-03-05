@@ -35,7 +35,7 @@ function usage() {
   echo
   echo "General options:"
   echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
-  echo "                       eu-west-1, ap-southeast-1]. Default is '$region'."
+  echo "                       eu-west-1, ap-southeast-1, ap-northeast-1]. Default is '$region'."
   echo "  --name NAME          AMI name. Must be unique. Default is '$name'."
   echo "  --description TEXT   AMI description. Default is '$description'."
   echo

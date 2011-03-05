@@ -52,7 +52,7 @@ function usage() {
   echo
   echo "Options:"
   echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
-  echo "                       eu-west-1, ap-southeast-1]. Default is '$region'."
+  echo "                       eu-west-1, ap-southeast-1, ap-northeast-1]. Default is '$region'."
   echo "  --self_test          Run self test on AMI instance and exit."
   echo "  --help               Display this help and exit."
 }
