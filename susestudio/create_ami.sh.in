@@ -83,6 +83,9 @@ function set_location_and_aki_id() {
     ap-southeast-1)
       location="$region"
       aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
+    ap-northeast-1)
+      location="$region"
+      aki_id=aki-d209a2d3; [ "$arch" = "x86_64" ] && aki_id=aki-d409a2d5;;
     *) echo >&2 "FATAL: Unknown region \"$region\""; exit 4;
   esac
 }

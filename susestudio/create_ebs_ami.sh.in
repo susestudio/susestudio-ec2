@@ -107,6 +107,8 @@ function find_ami() {
                         [ "$arch" = "x86_64" ] && ami=ami-62576216;;
         ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-72146a20
                         [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
+        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-2e0da62f
+                        [ "$arch" = "x86_64" ] && ami=ami-2c0da62d;;
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
 
@@ -121,6 +123,8 @@ function find_ami() {
                         [ "$arch" = "x86_64" ] && ami=ami-6e57621a;;
         ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-76146a24
                         [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
+        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-f40ea5f5
+                        [ "$arch" = "x86_64" ] && ami=ami-f60ea5f7;;
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
     *)
@@ -440,6 +444,7 @@ function opensuse_set_aki_id() {
     us-west-1)      aki_id=aki-99a0f1dc; [ "$arch" = "x86_64" ] && aki_id=aki-9ba0f1de;;
     eu-west-1)      aki_id=aki-4deec439; [ "$arch" = "x86_64" ] && aki_id=aki-4feec43b;;
     ap-southeast-1) aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
+    ap-northeast-1) aki_id=aki-d209a2d3; [ "$arch" = "x86_64" ] && aki_id=aki-d409a2d5;;
     *) log "Error: Unknown region '$region'"; exit 1;
   esac
   log "Using PV-GRUB ($aki_id)"
