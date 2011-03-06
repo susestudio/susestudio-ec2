@@ -419,7 +419,7 @@ function opensuse_create_image() {
   if [ $? -ne 0 ]; then
     # probably failed due to name clash. try with appended timestamp.
     local time=`date +%H%M%S`
-    log "Registering snapshot $snapshot as an AMI with name='$name-$time'..."
+    log "Registering $snapshot as an AMI with name='$name-$time'..."
     output=`ec2-register --region $region -a $arch -n "$name-$time" -d "$description" -s $snapshot --kernel $aki_id 2>&1`
   fi
   exit_if_failed
