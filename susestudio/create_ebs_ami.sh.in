@@ -40,7 +40,7 @@ function usage() {
   echo
   echo "Advanced options:"
   echo "  --arch ARCH              System architecture [i386, x86_64]. Default is '$arch'."
-  echo "  --base BASE_SYSTEM       Base system [11.3, SLES10_SP3, SLES11_SP1]. Default is '$base'."
+  echo "  --base BASE_SYSTEM       Base system [11.3, 11.4, SLES10_SP3, SLES11_SP1]. Default is '$base'."
   echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
   echo "  --volume_size SIZE       Root volume size, in GB. Default is $volume_size."
   echo "  --test_ami               Test the resulting AMI by launching and SSH into it."
@@ -112,8 +112,7 @@ function find_ami() {
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
 
-    # No public openSUSE 11.3 EBS AMIs yet, so use SLES11_SP1.
-    "11.3" | "SLES11_SP1")
+    "11.3" | "11.4" | "SLES11_SP1")
       case "$region" in
         us-east-1)      [ "$arch" = "i386"   ] && ami=ami-e0a35789
                         [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
