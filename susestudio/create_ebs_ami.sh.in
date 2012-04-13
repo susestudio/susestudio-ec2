@@ -124,6 +124,8 @@ function find_ami() {
                         [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
         ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-f40ea5f5
                         [ "$arch" = "x86_64" ] && ami=ami-f60ea5f7;;
+        sa-east-1)      [ "$arch" = "i386"   ] && ami=ami-743be469
+                        [ "$arch" = "x86_64" ] && ami=ami-6c3be471;;
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
     *)
