@@ -114,18 +114,27 @@ function find_ami() {
 
     "11.3" | "11.4" | "12.1" | "SLES11_SP1")
       case "$region" in
-        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-e0a35789
-                        [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
-        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-d01b4b95
-                        [ "$arch" = "x86_64" ] && ami=ami-dc1b4b99;;
-        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-6c576218
-                        [ "$arch" = "x86_64" ] && ami=ami-6e57621a;;
-        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-76146a24
-                        [ "$arch" = "x86_64" ] && ami=ami-74146a26;;
-        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-f40ea5f5
-                        [ "$arch" = "x86_64" ] && ami=ami-f60ea5f7;;
-        sa-east-1)      [ "$arch" = "i386"   ] && ami=ami-743be469
-                        [ "$arch" = "x86_64" ] && ami=ami-6c3be471;;
+        # US East (Northern Virgina)
+        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-0c32ef65
+                        [ "$arch" = "x86_64" ] && ami=ami-ca32efa3;;
+        # US West (Oregon)
+        us-west-2)      [ "$arch" = "i386"   ] && ami=ami-fe2da0ce
+                        [ "$arch" = "x86_64" ] && ami=ami-e42da0d4;;
+        # US West (Northern California)
+        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-37144c72
+                        [ "$arch" = "x86_64" ] && ami=ami-c7144c82;;
+        # EU (Ireland)
+        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-edd1e899
+                        [ "$arch" = "x86_64" ] && ami=ami-a1d1e8d5;;
+        # Asia Pacific (Singapore)
+        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-e2d094b0
+                        [ "$arch" = "x86_64" ] && ami=ami-82d094d0;;
+        # Asia Pacific (Tokyo)
+        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-ded263df
+                        [ "$arch" = "x86_64" ] && ami=ami-e6d263e7;;
+        # South America (Sao Paulo)
+        sa-east-1)      [ "$arch" = "i386"   ] && ami=ami-d261becf
+                        [ "$arch" = "x86_64" ] && ami=ami-ca61bed7;;
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
     *)
