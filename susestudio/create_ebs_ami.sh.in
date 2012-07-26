@@ -207,6 +207,19 @@ function start_instance() {
   log "Started $instance in $zone"
 }
 
+function wait_for_instance_to_run() {
+  log "Waiting for instance to run..." -n
+  for i in {1..10}; do
+    output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
+    exit_if_failed
+    state=`echo $output | cut -d' ' -f10`
+    [ "$state" ] && [ "$state" = "running" ] && break
+    sleep 3
+    echo -n "."
+  done
+  echo ""
+}
+
 function wait_for_hostname_and_volume() {
   log "Waiting for hostname..." -n
   for i in {1..10}; do
@@ -269,6 +282,8 @@ function create_and_attach_volume() {
     exit 1
   fi
   log "Created $image_volume"
+
+  wait_for_instance_to_run
 
   log "Attaching image volume..."
   output=`ec2-attach-volume --region "$region" $image_volume -i $instance -d /dev/sdi 2>&1`
