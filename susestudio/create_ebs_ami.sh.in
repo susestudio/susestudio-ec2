@@ -112,7 +112,7 @@ function find_ami() {
         *) log "Error: Unknown region '$region'"; exit 1;;
       esac;;
 
-    "11.3" | "11.4" | "SLES11_SP1")
+    "11.3" | "11.4" | "12.1" | "SLES11_SP1")
       case "$region" in
         us-east-1)      [ "$arch" = "i386"   ] && ami=ami-e0a35789
                         [ "$arch" = "x86_64" ] && ami=ami-e4a3578d;;
