@@ -30,7 +30,7 @@ function usage() {
   echo "Usage: create_ebs_ami.sh [--region REGION] ..."
   echo "Uploads and creates an EBS backed EC2 Amazon Machine Image (AMI) in Amazon Web Services (AWS)."
   echo
-  echo "Report bugs to https://github.com/jamestyj/susestudio-ec2/issues."
+  echo "Report bugs to https://github.com/susestudio/susestudio-ec2/issues."
   echo
   echo "General options:"
   echo "  --region REGION          The region to upload and register in [us-east-1, us-west-1,"
