@@ -21,7 +21,7 @@ tarball=../{TARBALL}
 # Defaults
 region=us-east-1
 description="Built by SUSE Studio"
-volume_size=2
+volume_size=5
 should_test_ami=false
 make_public=false
 
