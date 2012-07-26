@@ -464,12 +464,16 @@ function sles_create_image() {
 }
 
 function opensuse_set_aki_id() {
+  # List of AKI IDs (hd0) which are taken from
+  # http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/UserProvidedkernels.html
   case "$region" in
     us-east-1)      aki_id=aki-407d9529; [ "$arch" = "x86_64" ] && aki_id=aki-427d952b;;
     us-west-1)      aki_id=aki-99a0f1dc; [ "$arch" = "x86_64" ] && aki_id=aki-9ba0f1de;;
+    us-west-2)      aki_id=aki-fa37baca; [ "$arch" = "x86_64" ] && aki_id=aki-fc37bacc;;
     eu-west-1)      aki_id=aki-4deec439; [ "$arch" = "x86_64" ] && aki_id=aki-4feec43b;;
     ap-southeast-1) aki_id=aki-13d5aa41; [ "$arch" = "x86_64" ] && aki_id=aki-11d5aa43;;
     ap-northeast-1) aki_id=aki-d209a2d3; [ "$arch" = "x86_64" ] && aki_id=aki-d409a2d5;;
+    sa-east-1)      aki_id=aki-ca8f51d7; [ "$arch" = "x86_64" ] && aki_id=aki-c48f51d9;;
     *) log "Error: Unknown region '$region'"; exit 1;
   esac
   log "Using PV-GRUB ($aki_id)"
