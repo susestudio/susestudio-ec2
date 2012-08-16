@@ -27,7 +27,7 @@ make_public=false
 
 
 function usage() {
-  echo "Usage: create_ebs_ami.sh [--region REGION] ..."
+  echo "Usage: create_ami.sh [--region REGION] ..."
   echo "Uploads and creates an EBS backed EC2 Amazon Machine Image (AMI) in Amazon Web Services (AWS)."
   echo
   echo "Report bugs to https://github.com/susestudio/susestudio-ec2/issues."

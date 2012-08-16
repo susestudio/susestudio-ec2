@@ -3,7 +3,7 @@ README for SUSE Studio Amazon EC2 appliance
 ------------------------------------------------
 
 This tarball contains the Amazon EC2 appliance created by SUSE Studio and the
-create_ebs_ami.sh script. The script uploads the appliance to Amazon EC2 to
+create_ami.sh script. The script uploads the appliance to Amazon EC2 to
 create an Elastic Block Storage (EBS) backed Amazon Machine Image (AMI).
 
 The Amazon EC2 API tools must be installed for the script to work. It can be
@@ -33,7 +33,7 @@ export EC2_PRIVATE_KEY=~/pk-ec2.pem
 
 Now create your AMI with the specific Amazon region (us-west-1, us-east-1, eu-west-1,
 ap-southeast-1...), eg:
-./create_ebs_ami.sh --region eu-west-1
+./create_ami.sh --region eu-west-1
 
 One way to launch new instances of your AMI is with the command line tools, eg:
 ec2-run-instances ami-6a380d1e -t m1.small --region eu-west-1 -k bbrunner-eu
@@ -56,11 +56,11 @@ feedback@susestudio.com.
 Example
 -----------------
 
-Normal execution of the create_ebs_ami.sh script looks like this:
+Normal execution of the create_ami.sh script looks like this:
 
   jamestyj@sg:/> tar xf My_EC2.x86_64-0.0.1.ec2.tar.gz
   jamestyj@sg:/> cd My_EC2-0.0.1
-  jamestyj@sg:/My_EC2-0.0.1> ./create_ebs_ami.sh --region eu-west-1
+  jamestyj@sg:/My_EC2-0.0.1> ./create_ami.sh --region eu-west-1
   20:13:35 Creating 'SUSE_Studio' security group in eu-west-1...
   20:13:38 Created new security group
   20:13:38 Adding SSH permissions to 'SUSE_Studio' security group in eu-west-1...
