@@ -96,50 +96,29 @@ function log() {
 }
 
 function find_ami() {
-  case "$base" in
-    "SLES10_SP3")
-      case "$region" in
-        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-16a3577f
-                        [ "$arch" = "x86_64" ] && ami=ami-eea35787;;
-        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-d61b4b93
-                        [ "$arch" = "x86_64" ] && ami=ami-d21b4b97;;
-        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-60576214
-                        [ "$arch" = "x86_64" ] && ami=ami-62576216;;
-        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-72146a20
-                        [ "$arch" = "x86_64" ] && ami=ami-78146a2a;;
-        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-2e0da62f
-                        [ "$arch" = "x86_64" ] && ami=ami-2c0da62d;;
-        *) log "Error: Unknown region '$region'"; exit 1;;
-      esac;;
-
-    "11.3" | "11.4" | "12.1" | "SLES11_SP1")
-      case "$region" in
-        # US East (Northern Virgina)
-        us-east-1)      [ "$arch" = "i386"   ] && ami=ami-0c32ef65
-                        [ "$arch" = "x86_64" ] && ami=ami-ca32efa3;;
-        # US West (Oregon)
-        us-west-2)      [ "$arch" = "i386"   ] && ami=ami-fe2da0ce
-                        [ "$arch" = "x86_64" ] && ami=ami-e42da0d4;;
-        # US West (Northern California)
-        us-west-1)      [ "$arch" = "i386"   ] && ami=ami-37144c72
-                        [ "$arch" = "x86_64" ] && ami=ami-c7144c82;;
-        # EU (Ireland)
-        eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-edd1e899
-                        [ "$arch" = "x86_64" ] && ami=ami-a1d1e8d5;;
-        # Asia Pacific (Singapore)
-        ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-e2d094b0
-                        [ "$arch" = "x86_64" ] && ami=ami-82d094d0;;
-        # Asia Pacific (Tokyo)
-        ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-ded263df
-                        [ "$arch" = "x86_64" ] && ami=ami-e6d263e7;;
-        # South America (Sao Paulo)
-        sa-east-1)      [ "$arch" = "i386"   ] && ami=ami-d261becf
-                        [ "$arch" = "x86_64" ] && ami=ami-ca61bed7;;
-        *) log "Error: Unknown region '$region'"; exit 1;;
-      esac;;
-    *)
-      log "Error: Unknown base system '$base'"
-      exit 1;;
+  case "$region" in
+    # US East (Northern Virgina)
+    us-east-1)      [ "$arch" = "i386"   ] && ami=ami-0c32ef65
+                    [ "$arch" = "x86_64" ] && ami=ami-ca32efa3;;
+    # US West (Oregon)
+    us-west-2)      [ "$arch" = "i386"   ] && ami=ami-fe2da0ce
+                    [ "$arch" = "x86_64" ] && ami=ami-e42da0d4;;
+    # US West (Northern California)
+    us-west-1)      [ "$arch" = "i386"   ] && ami=ami-37144c72
+                    [ "$arch" = "x86_64" ] && ami=ami-c7144c82;;
+    # EU (Ireland)
+    eu-west-1)      [ "$arch" = "i386"   ] && ami=ami-edd1e899
+                    [ "$arch" = "x86_64" ] && ami=ami-a1d1e8d5;;
+    # Asia Pacific (Singapore)
+    ap-southeast-1) [ "$arch" = "i386"   ] && ami=ami-e2d094b0
+                    [ "$arch" = "x86_64" ] && ami=ami-82d094d0;;
+    # Asia Pacific (Tokyo)
+    ap-northeast-1) [ "$arch" = "i386"   ] && ami=ami-ded263df
+                    [ "$arch" = "x86_64" ] && ami=ami-e6d263e7;;
+    # South America (Sao Paulo)
+    sa-east-1)      [ "$arch" = "i386"   ] && ami=ami-d261becf
+                    [ "$arch" = "x86_64" ] && ami=ami-ca61bed7;;
+    *) log "Error: Unknown region '$region'"; exit 1;;
   esac
   if [ ! "$ami" ]; then
     log "Error: Unknown architecture '$arch'"
