@@ -1,9 +1,9 @@
 README for SUSE Studio Amazon EC2 image
-----------------------------------------
+=======================================
 
-Note: The latest version of this README and corresponding scripts are available
+NOTE: The latest version of this README and corresponding scripts are available
 on [Github](https://github.com/susestudio/susestudio-ec2/tree/master/susestudio).
-The rendered README.md is also easier to read there.
+The rendered version of this document is also easier to read there.
 
 This tarball contains the Amazon [EC2](http://aws.amazon.com/ec2/) image
 created by SUSE Studio ([Online](http://susestudio.com), [Onsite]
@@ -13,11 +13,17 @@ The script uploads the image to Amazon EC2 and creates an [EBS]
 (http://en.wikipedia.org/wiki/Amazon_Machine_Image)).
 
 
-### Installation
+Installation
+-------------
 
 The Amazon EC2 API tools must be installed for the script to work. The easiest
 way is to install the RPM from the [Virtualization:Cloud:EC2 repository]
-(http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/).
+(http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/). For
+example, if you're running openSUSE 12.2, run the following commands:
+
+    sudo zypper addrepo http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/openSUSE_12.2/ Virt:Cloud:EC2
+    sudo zypper refresh Virt:Cloud:EC2
+    sudo zypper install ec2-api-tools
 
 Alternatively, you can [download]
 (http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351) and
@@ -25,7 +31,8 @@ Alternatively, you can [download]
 them directly from Amazon.
 
 
-### Configuration
+Configuration
+--------------
 
 In order to access Amazon Web Services (AWS), the script requires the following
 environment variables to be defined:
@@ -45,20 +52,42 @@ have to set them up manually each time, eg:
     export EC2_CERT=~/cert-aws.pem
     export EC2_PRIVATE_KEY=~/pk-ec2.pem
 
+
+Execution
+----------
+
 Now you can create your AMI in the specific Amazon region (eg. `us-west-1`,
-`eu-west-1`):
+`eu-west-1`) simply by executing the script:
 
     ./create_ami.sh --region eu-west-1
 
 You can then use Amazon's [AWS web console](https://console.aws.amazon.com) to
 manage and launch instances of your AMIs.
 
-Please send your bug reports, questions, feedback, and suggestions to
-feedback@susestudio.com.
+There are additional options you can specify:
+
+    jamestyj@sg:/My_EC2-0.0.1> ./create_ami.sh --help
+    Usage: create_ami.sh [--region REGION] ...
+    Uploads and creates an EBS backed EC2 Amazon Machine Image (AMI) in Amazon Web Services (AWS).
+
+    Report bugs to https://github.com/susestudio/susestudio-ec2/issues.
+
+    General options:
+      --region REGION          The region to upload and register in [us-east-1, us-west-1,
+                               eu-west-1, ap-southeast-1, ap-northeast-1]. Default is 'us-east-1'.
+      --name NAME              AMI name. Must be unique. Default is 'My_EC2-0.0.1'.
+      --description TEXT       AMI description. Default is 'Built by SUSE Studio'.
+
+    Advanced options:
+      --arch ARCH              System architecture [i386, x86_64]. Default is 'i386'.
+      --base BASE_SYSTEM       Base system [11.3, 11.4, SLES10_SP3, SLES11_SP1]. Default is '12.2'.
+      --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '../My_EC2-0.0.1.ec2.tar.gz'.
+      --volume_size SIZE       Root volume size, in GB. Default is 5.
+      --test_ami               Test the resulting AMI by launching and SSH into it.
+      --public                 Make the resulting AMI public.
 
 
-Example
---------
+### Sample output
 
 Normal execution of the create_ami.sh script looks like this:
 
@@ -97,3 +126,10 @@ Normal execution of the create_ami.sh script looks like this:
     20:16:45 Created new EBS-backed AMI. May take several minutes for AMI to be ready.
     20:16:45 AMI: ami-e04f7a94, region: eu-west-1.
 
+
+
+Feedback / Bug reports
+-----------------------
+
+Please send your bug reports, questions, feedback, and suggestions to
+feedback@susestudio.com.
