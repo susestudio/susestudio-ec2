@@ -1,17 +1,31 @@
-README for SUSE Studio Amazon EC2 appliance
---------------------------------------------
+README for SUSE Studio Amazon EC2 image
+----------------------------------------
 
-This tarball contains the Amazon EC2 appliance created by SUSE Studio and the
-create_ami.sh script. The script uploads the appliance to Amazon EC2 to
-create an Elastic Block Storage (EBS) backed Amazon Machine Image (AMI).
+Note: The latest version of this README and corresponding scripts are available
+on [Github](https://github.com/susestudio/susestudio-ec2/tree/master/susestudio).
+The rendered README.md is also easier to read there.
 
-The Amazon EC2 API tools must be installed for the script to work. It can be
-found at:
+This tarball contains the Amazon [EC2](http://aws.amazon.com/ec2/) image
+created by SUSE Studio ([Online](http://susestudio.com), [Onsite]
+(https://www.suse.com/products/susestudio/)) and the `create_ami.sh` script.
+The script uploads the image to Amazon EC2 and creates an [EBS]
+(http://aws.amazon.com/ebs/) backed Amazon Machine Image ([AMI]
+(http://en.wikipedia.org/wiki/Amazon_Machine_Image)).
 
-  http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351
 
-Additional help on setting up these tools can be found here:
-http://docs.amazonwebservices.com/AmazonEC2/gsg/2006-06-26/setting-up-your-tools.html
+### Installation
+
+The Amazon EC2 API tools must be installed for the script to work. The easiest
+way is to install the RPM from the [Virtualization:Cloud:EC2 repository]
+(http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/).
+
+Alternatively, you can [download]
+(http://developer.amazonwebservices.com/connect/entry.jspa?externalID=351) and
+[install](http://docs.amazonwebservices.com/AmazonEC2/gsg/2006-06-26/setting-up-your-tools.html)
+them directly from Amazon.
+
+
+### Configuration
 
 In order to access Amazon Web Services (AWS), the script requires the following
 environment variables to be defined:
@@ -31,15 +45,15 @@ have to set them up manually each time, eg:
     export EC2_CERT=~/cert-aws.pem
     export EC2_PRIVATE_KEY=~/pk-ec2.pem
 
-Now create your AMI with the specific Amazon region (`us-west-1`, `us-east-1`,
-`eu-west-1`, `ap-southeast-1`, ...), eg:
+Now you can create your AMI in the specific Amazon region (eg. `us-west-1`,
+`eu-west-1`):
 
     ./create_ami.sh --region eu-west-1
 
 You can then use Amazon's [AWS web console](https://console.aws.amazon.com) to
 manage and launch instances of your AMIs.
 
-Send your bug reports, questions, feedback, and suggestions to
+Please send your bug reports, questions, feedback, and suggestions to
 feedback@susestudio.com.
 
 
