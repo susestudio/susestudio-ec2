@@ -12,7 +12,9 @@ Pull requests, feature requests and bug reports are very much appreciated!
 ec2-janitor
 -----------
 This sub-project provides an easy way to monitor and clean-up Amazon EC2
-instances and AMIs across all EC2 regions.
+instances and AMIs across all EC2 regions. Refer to the sub-project's
+[README.md](https://github.com/susestudio/susestudio-ec2/blob/master/ec2-janitor/README.md)
+for details.
 
 
 susestudio
