@@ -3,33 +3,8 @@
 # Script for launching the specified Amazon Machine Image (AMI) and connecting
 # to it via SSH. Automatically terminates upon logout from the EC2 instance.
 #
-# See script usage for more details.
-#
-# Example script run and output:
-#   jamestyj@sentosa:~> run-and-connect ami-bdd3e7c9
-#   10:19:57 Creating SSH keypair suse-studio.DO0fSzzp7m in eu-west-1...
-#   10:20:01 Waiting for AMI...
-#   10:20:05 Starting new instance...
-#   10:20:09 Started i-eb8a779d
-#   10:20:09 Waiting for hostname......
-#   10:20:31 Hostname is ec2-46-137-26-197.eu-west-1.compute.amazonaws.com
-#   10:20:31 Waiting for instance boot and SSH....
-#   Warning: Permanently added 'ec2-46-137-26-197.eu-west-1.compute.amazonaws.com,46.137.26.197' (RSA) to the list of known hosts.
-#
-#     __|  __|_  )  SUSE Linux Enterprise
-#     _|  (     /       Server 11 SP1
-#    ___|\___|___|     x86_64 (64-bit)
-#
-#   For more information about using SUSE Linux Enterprise Server please see
-#   http://www.novell.com/documentation/sles11/
-#
-#   Have a lot of fun...
-#   ip-10-234-223-220:~ # logout
-#   Connection to ec2-46-137-26-197.eu-west-1.compute.amazonaws.com closed.
-#   10:21:02 Cleaning up...
-#   10:21:02 Removing SSH keypair suse-studio.DO0fSzzp7m...
-#   10:21:05 Terminating instance i-eb8a779d...
-#   10:21:09 Bye
+# See https://github.com/susestudio/susestudio-ec2/blob/master/README.md for
+# details.
 #
 # Author: James Tan <jatan@suse.com>
 
