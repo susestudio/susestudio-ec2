@@ -31,10 +31,12 @@ class Ec2Janitor < Thor
 
   CONFIG_FILE = 'config.yml'
 
-  desc "instances", "Displays active instances in all regions"
+  desc "instances", "Displays instances in all regions. Optionally terminates those that exceed the specified time."
+  method_option :terminate, :type => :numeric, :desc => "Terminate instances that exceed N minutes of elapsed time."
   def instances
     time = Time.now.utc
     results = []
+    terminated = []
     threaded_regions do |region|
       region.instances.each do |instance|
         next if instance.status == :terminated
@@ -43,6 +45,10 @@ class Ec2Janitor < Thor
           region.name, instance.id, instance.instance_type, instance.ip_address,
           instance.status, instance.launch_time, duration(uptime)
         ]
+        if options.terminate? && uptime >= (options.terminate*60)
+          terminated << instance.id
+          instance.terminate
+        end
       end
     end
     if results.empty?
@@ -50,6 +56,9 @@ class Ec2Janitor < Thor
     else
       puts table(['Region','Instance ID', 'Type', 'IP', 'Status', 'Launch time', 'Elapsed'],
            *results.sort_by{ |k| k.last })
+      unless terminated.empty?
+        puts "Terminated instances: #{terminated.join(', ')}"
+      end
     end
   end
 

@@ -5,7 +5,7 @@ Amazon EC2 janitor script for managing the openSUSE EC2 account and AMIs. Also
 useful for other purposes, eg. to keep EC2 accounts clean. API requests to each
 Amazon EC2 region is peformed in parallel to save time.
 
-Usage:
+Usage overview:
 
     jamestyj@sentosa:~> ./ec2-janitor.rb
     Tasks:
@@ -16,8 +16,22 @@ Usage:
       ec2-janitor.rb textile VERSION ARCH  # Output matching openSUSE AMI IDs from all regions in Textile format. Useful for SUSE Ga...
 
 
-Displaying instances in all regions
-------------------------------------
+Managing instances in all regions
+----------------------------------
+
+Usage:
+
+    jamestyj@sentosa:~> ./ec2-janitor.rb help instances
+    Usage:
+      ec2-janitor.rb instances
+
+    Options:
+      [--terminate=N]  # Terminate instances that exceed N minutes of elapsed time.
+
+    Displays instances in all regions. Optionally terminates those that exceed the specified time.
+
+
+### Display instances in all regions
 
 Sample output:
 
@@ -29,6 +43,19 @@ Sample output:
     | us-west-2 | i-a5bae696  | t1.micro | 54.245.54.96  | running | 2012-10-10 16:50:03 UTC | 19 mins and 37 secs |
     +-----------+-------------+----------+---------------+---------+-------------------------+---------------------+
 
+
+### Terminate instances that exceed elapsed threshold
+
+Sample output:
+
+    jamestyj@sentosa:~> ./ec2-janitor.rb instances --terminate=10
+    +-----------+-------------+----------+---------------+---------+-------------------------+---------------------+
+    | Region    | Instance ID | Type     | IP            | Status  | Launch time             | Elapsed             |
+    +-----------+-------------+----------+---------------+---------+-------------------------+---------------------+
+    | eu-west-1 | i-2024856b  | t1.micro | 54.247.63.243 | running | 2012-10-10 16:50:27 UTC | 34 mins and 30 secs |
+    | us-west-2 | i-a5bae696  | t1.micro | 54.245.54.96  | running | 2012-10-10 16:50:03 UTC | 34 mins and 54 secs |
+    +-----------+-------------+----------+---------------+---------+-------------------------+---------------------+
+    Terminated instances: i-2024856b, i-a5bae696
 
 
 Displaying list of AMIs in all regions
