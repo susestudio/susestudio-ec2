@@ -37,13 +37,13 @@ official openSUSE AMIs in Amazon EC2, under the owner ID 056126556840.
 Details of the previous public openSUSE AMI releases can be found in the
 following blog posts:
 
-  * 27 July 2012 [Public AMIs based on openSUSE 12.1]
+  * 27 Jul 2012 - [Public AMIs based on openSUSE 12.1]
     (http://blog.susestudio.com/2012/07/public-amis-based-on-opensuse-121.html)
-  * 24 June 2011 [Update for openSUSE 11.4 AMIs on EC2]
+  * 24 Jun 2011 - [Update for openSUSE 11.4 AMIs on EC2]
     (http://blog.susestudio.com/2011/06/we-updated-all-opensuse-11.html)
-  * 11 March 2011 [openSUSE 11.4 for Amazon EC2]
+  * 11 Mar 2011 - [openSUSE 11.4 for Amazon EC2]
     (http://blog.susestudio.com/2011/03/opensuse-114-for-amazon-ec2.html)
-  * 21 February 2011 [Public openSUSE 11.3 AMIs]
+  * 21 Feb 2011 - [Public openSUSE 11.3 AMIs]
     (http://blog.susestudio.com/2011/02/public-opensuse-113-amis.html)
 
 
