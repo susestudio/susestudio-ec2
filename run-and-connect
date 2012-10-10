@@ -1,5 +1,5 @@
 #!/bin/bash
-# ============================================================================
+#
 # Script for launching the specified Amazon Machine Image (AMI) and connecting
 # to it via SSH. Automatically terminates upon logout from the EC2 instance.
 #
@@ -31,10 +31,7 @@
 #   10:21:05 Terminating instance i-eb8a779d...
 #   10:21:09 Bye
 #
-# Version: 1.0.0
-# Author:  James Tan <jatan@suse.de>
-# Contact: feedback@susestudio.com
-# ============================================================================
+# Author: James Tan <jatan@suse.com>
 
 region=eu-west-1
 
