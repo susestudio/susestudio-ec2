@@ -20,8 +20,6 @@ function usage() {
   echo "automatically terminates the EC2 instanceand removes the created SSH"
   echo "keypair on logout."
   echo
-  echo "Report bugs to https://github.com/jamestyj/susestudio-ec2/issues."
-  echo
   echo "Options:"
   echo "  --region REGION      The region to upload and register in [us-east-1, us-west-1,"
   echo "                       eu-west-1, ap-southeast-1, ap-northeast-1]. Default is '$region'."

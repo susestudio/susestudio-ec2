@@ -70,8 +70,6 @@ intended for easy testing of AMIs.
     automatically terminates the EC2 instanceand removes the created SSH
     keypair on logout.
 
-    Report bugs to https://github.com/jamestyj/susestudio-ec2/issues.
-
     Options:
       --region REGION      The region to upload and register in [us-east-1, us-west-1,
                            eu-west-1, ap-southeast-1, ap-northeast-1]. Default is 'eu-west-1'.
