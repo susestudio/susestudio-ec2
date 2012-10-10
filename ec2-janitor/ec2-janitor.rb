@@ -4,6 +4,7 @@
 #
 # See README.md for details.
 #
+# Author: Christoph Thiel <cthiel@suse.com>
 # Author: James Tan <jatan@suse.com>
 
 require 'rubygems'
