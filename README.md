@@ -47,6 +47,8 @@ script for each region.
 Details of the previous public openSUSE AMI releases can be found in the
 following blog posts:
 
+  * 10 Oct 2012 - [Public openSUSE 12.2 Amazon EC2 AMIs]
+    (http://blog.susestudio.com/2012/10/public-opensuse-122-amazon-ec2-amis.html)
   * 27 Jul 2012 - [Public AMIs based on openSUSE 12.1]
     (http://blog.susestudio.com/2012/07/public-amis-based-on-opensuse-121.html)
   * 24 Jun 2011 - [Update for openSUSE 11.4 AMIs on EC2]
