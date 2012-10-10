@@ -33,20 +33,22 @@ class Ec2Janitor < Thor
 
   desc "instances", "Displays active instances in all regions"
   def instances
+    time = Time.now.utc
     results = []
     threaded_regions do |region|
       region.instances.each do |instance|
         next if instance.status == :terminated
+        uptime = (time - instance.launch_time).to_i
         results << [
           region.name, instance.id, instance.instance_type, instance.ip_address,
-          instance.status, instance.launch_time
+          instance.status, instance.launch_time, duration(uptime)
         ]
       end
     end
     if results.empty?
       puts "No instances"
     else
-      puts table(['Region','Instance ID', 'Type', 'IP', 'Status', 'Launch time'],
+      puts table(['Region','Instance ID', 'Type', 'IP', 'Status', 'Launch time', 'Elapsed'],
            *results.sort_by{ |k| k.last })
     end
   end
@@ -184,6 +186,21 @@ class Ec2Janitor < Thor
       threads << Thread.new{ yield region }
     end
     threads.map(&:join)
+  end
+
+  def duration(secs)
+    mins  = secs  / 60
+    hours = mins  / 60
+    days  = hours / 24
+    if days > 0
+      "#{days} days and #{hours % 24} hrs"
+    elsif hours > 0
+      "#{hours} hrs and #{mins % 60} mins"
+    elsif mins > 0
+      "#{mins} mins and #{secs % 60} secs"
+    elsif secs >= 0
+      "#{secs} secs"
+    end
   end
 end
 
