@@ -62,13 +62,19 @@ class Ec2Janitor < Thor
     end
   end
 
-  desc "images", "Displays images in all regions"
+  desc "images", "Displays images in all regions. Optionally deletes all private AMIs."
+  method_option :'prune', :type => :boolean, :desc => "Delete all private AMIs."
   def images
     results = []
+    deleted = []
     threaded_regions do |region|
       region.images.with_owner('self').each do |image|
         results << [ region.name, image.name, image.id,
                      (image.public? ? 'Public' : 'Private') ]
+        if options.prune? && !image.public?
+          deleted << image.id
+          image.delete
+        end
       end
     end
     if results.empty?
@@ -76,6 +82,9 @@ class Ec2Janitor < Thor
     else
       puts table(['Region', 'Name', 'AMI ID', 'Perms'],
                  *results.sort_by{ |k| [k[0], k[1]] })
+    end
+    unless deleted.empty?
+      puts "Deleted private AMIs: #{deleted.join(', ')}"
     end
   end
 
