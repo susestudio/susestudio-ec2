@@ -32,7 +32,7 @@ class Ec2Janitor < Thor
   CONFIG_FILE = 'config.yml'
 
   desc "instances", "Displays instances in all regions. Optionally terminates those that exceed the specified time."
-  method_option :terminate, :type => :numeric, :desc => "Terminate instances that exceed N minutes of elapsed time."
+  method_option :terminate, :type => :numeric, :desc => "Terminate all instances older than N minutes."
   def instances
     time = Time.now.utc
     results = []
@@ -63,7 +63,7 @@ class Ec2Janitor < Thor
   end
 
   desc "images", "Displays images in all regions. Optionally deletes all private AMIs."
-  method_option :'prune', :type => :boolean, :desc => "Delete all private AMIs."
+  method_option :prune, :type => :boolean, :desc => "Delete all private AMIs."
   def images
     results = []
     deleted = []
@@ -85,6 +85,34 @@ class Ec2Janitor < Thor
     end
     unless deleted.empty?
       puts "Deleted private AMIs: #{deleted.join(', ')}"
+    end
+  end
+
+  desc "volumes", "Displays EBS volumes in all regions."
+  method_option :prune, :type => :numeric, :desc => "Delete all volumes older than N minutes."
+  def volumes
+    time = Time.now.utc
+    results = []
+    deleted = []
+    threaded_regions do |region|
+      region.volumes.each do |volume|
+        uptime = (time - volume.create_time).to_i
+        results << [ volume.availability_zone_name, volume.id,
+                     "#{volume.size} GB", volume.status, volume.create_time ]
+        if options.prune? && uptime >= (options.prune*60)
+          deleted << volume.id
+          volume.delete
+        end
+      end
+    end
+    if results.empty?
+      puts "No volumes"
+    else
+      puts table(['Zone', 'Volume ID', 'Size', 'Status', 'Created' ],
+                 *results.sort_by{ |k| [k[0], k[1]] })
+      unless deleted.empty?
+        puts "Deleted volumes: #{deleted.join(', ')}"
+      end
     end
   end
 

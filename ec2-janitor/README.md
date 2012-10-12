@@ -58,12 +58,12 @@ Sample output:
     Terminated instances: i-2024856b, i-a5bae696
 
 
-Displaying list of AMIs in all regions
----------------------------------------
+Managing AMIs in all regions
+-----------------------------
 
 Sample output:
 
-    jamestyj@sentosa:~> ./ec2-janitor.rb images
+    jamestyj@sentosa:~> ./ec2-janitor.rb images --prune
     +----------------+-----------------------------+--------------+---------+
     | Region         | Name                        | AMI ID       | Perms   |
     +----------------+-----------------------------+--------------+---------+
@@ -75,6 +75,9 @@ Sample output:
     | ap-southeast-1 | openSUSE-12.1-v3.0.0.x86_64 | ami-d86a2b8a | Public  |
     | ap-southeast-1 | openSUSE-12.2-v4.0.0.i386   | ami-7eacec2c | Public  |
     | ap-southeast-1 | openSUSE-12.2-v4.0.0.x86_64 | ami-30acec62 | Public  |
+    | eu-west-1      | a46Romans_JeOSx86_64001     | ami-850203f1 | Private |
+    | eu-west-1      | a46Romans_JeOSx86_64005     | ami-65e5e411 | Private |
+    | eu-west-1      | a76428911sp2ec2x64x86_64002 | ami-116b6a65 | Private |
     | eu-west-1      | openSUSE-12.1-v3.0.0.i386   | ami-055e5971 | Public  |
     | eu-west-1      | openSUSE-12.1-v3.0.0.x86_64 | ami-0f5d5a7b | Public  |
     | eu-west-1      | openSUSE-12.2-v4.0.0.i386   | ami-9b0000ef | Public  |
@@ -96,6 +99,28 @@ Sample output:
     | us-west-2      | openSUSE-12.2-v4.0.0.i386   | ami-c6ca43f6 | Public  |
     | us-west-2      | openSUSE-12.2-v4.0.0.x86_64 | ami-62cd4452 | Public  |
     +----------------+-----------------------------+--------------+---------+
+    Deleted private AMIs: ami-116b6a65, ami-65e5e411, ami-850203f1
+
+
+Managing volumes in all regions
+--------------------------------
+
+Sample output:
+
+    jamestyj@sentosa:~> ./ec2-janitor.rb volumes --prune=3600
+    +------------+--------------+-------+-----------+-------------------------+
+    | Zone       | Volume ID    | Size  | Status    | Created                 |
+    +------------+--------------+-------+-----------+-------------------------+
+    | eu-west-1a | vol-1007003b | 5 GB  | available | 2012-09-10 14:22:05 UTC |
+    | eu-west-1a | vol-a8c8df83 | 16 GB | available | 2012-09-18 18:08:50 UTC |
+    | eu-west-1a | vol-d9ee09f3 | 16 GB | available | 2012-09-26 13:27:44 UTC |
+    | eu-west-1a | vol-e87e79c3 | 12 GB | available | 2012-09-10 14:09:34 UTC |
+    | eu-west-1b | vol-2daaa106 | 16 GB | available | 2012-09-16 19:15:03 UTC |
+    | eu-west-1b | vol-974349bc | 16 GB | available | 2012-09-16 21:47:50 UTC |
+    | eu-west-1c | vol-6137304a | 16 GB | available | 2012-09-10 16:18:03 UTC |
+    | eu-west-1c | vol-f3909bd8 | 16 GB | available | 2012-09-16 18:58:18 UTC |
+    +------------+--------------+-------+-----------+-------------------------+
+    Deleted volumes: vol-e87e79c3, vol-1007003b, vol-6137304a, vol-f3909bd8, vol-2daaa106, vol-974349bc, vol-a8c8df83, vol-d9ee09f3
 
 
 Generating Textile table of AMI IDs
