@@ -1,0 +1,7 @@
+LOG_FILE=/var/log/studio/ec2/janitor.log
+
+# Run 3 mins after every hour
+3 * * * *       clean_up-hourly.sh 2>&1 >>$LOG_FILE
+
+# Run at 0530 every Sat
+30 5 * * Sun    clean_up-weekly.sh 2>&1 >>$LOG_FILE
