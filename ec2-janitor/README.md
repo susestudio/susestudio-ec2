@@ -123,6 +123,47 @@ Sample output:
     Deleted volumes: vol-e87e79c3, vol-1007003b, vol-6137304a, vol-f3909bd8, vol-2daaa106, vol-974349bc, vol-a8c8df83, vol-d9ee09f3
 
 
+Managing snapshots in all regions
+----------------------------------
+
+Sample output:
+
+    jamestyj@sentosa:ec2-janitor(master)> ./ec2-janitor.rb  snapshots --prune=3600
+    +----------------+---------------+--------------+------+-----------+-------------------------+
+    | Zone           | Snapshot ID   | Volume ID    | Size | Status    | Started                 |
+    +----------------+---------------+--------------+------+-----------+-------------------------+
+    | ap-northeast-1 | snap-3ab4c11b | vol-94ba85b7 | 5 GB | completed | 2012-10-09 16:04:06 UTC |
+    | ap-northeast-1 | snap-53cc9b3d | vol-314c5851 | 5 GB | completed | 2012-07-26 17:49:30 UTC |
+    | ap-northeast-1 | snap-79661358 | vol-22c7f801 | 5 GB | completed | 2012-10-09 14:50:40 UTC |
+    | ap-northeast-1 | snap-cf7024a1 | vol-adf4e1cd | 5 GB | completed | 2012-07-26 15:55:06 UTC |
+    | ap-southeast-1 | snap-23c17a4c | vol-210c4844 | 5 GB | completed | 2012-07-26 15:42:22 UTC |
+    | ap-southeast-1 | snap-376cd758 | vol-5d92d638 | 5 GB | completed | 2012-07-26 17:50:15 UTC |
+    | ap-southeast-1 | snap-5fd5ef7b | vol-c2c252e6 | 5 GB | completed | 2012-10-09 15:02:35 UTC |
+    | ap-southeast-1 | snap-fac2f8de | vol-18f0603c | 5 GB | completed | 2012-10-09 16:15:40 UTC |
+    | eu-west-1      | snap-14075142 | vol-49966e63 | 5 GB | completed | 2012-10-09 16:24:27 UTC |
+    | eu-west-1      | snap-7d8d9b16 | vol-c0b5e3a8 | 5 GB | completed | 2012-07-26 17:35:15 UTC |
+    | eu-west-1      | snap-bde8fed6 | vol-5295c33a | 5 GB | completed | 2012-07-26 15:31:28 UTC |
+    | eu-west-1      | snap-c8e3b49e | vol-c5b34bef | 5 GB | completed | 2012-10-09 15:13:22 UTC |
+    | sa-east-1      | snap-060a3a37 | vol-ed9927d2 | 5 GB | completed | 2012-10-09 15:24:12 UTC |
+    | sa-east-1      | snap-1776377f | vol-92da64ff | 5 GB | completed | 2012-07-26 17:35:43 UTC |
+    | sa-east-1      | snap-c10b3bf0 | vol-758a344a | 5 GB | completed | 2012-10-09 16:34:47 UTC |
+    | sa-east-1      | snap-e374358b | vol-76e6581b | 5 GB | completed | 2012-07-26 17:20:55 UTC |
+    | us-east-1      | snap-1a0f076b | vol-72330e13 | 5 GB | completed | 2012-07-26 16:18:51 UTC |
+    | us-east-1      | snap-7fb2ae0b | vol-a60e3ddc | 5 GB | completed | 2012-10-09 16:44:51 UTC |
+    | us-east-1      | snap-d90f1dad | vol-2cdfee56 | 5 GB | completed | 2012-10-09 13:02:09 UTC |
+    | us-east-1      | snap-ea21299b | vol-761f2217 | 5 GB | completed | 2012-07-26 16:41:41 UTC |
+    | us-west-1      | snap-2fd1a603 | vol-35c0941b | 5 GB | completed | 2012-10-09 15:35:36 UTC |
+    | us-west-1      | snap-405b6a26 | vol-d79e57ae | 5 GB | completed | 2012-07-26 17:49:11 UTC |
+    | us-west-1      | snap-7c23151a | vol-ef8d4396 | 5 GB | completed | 2012-07-26 14:58:42 UTC |
+    | us-west-1      | snap-813442ad | vol-16f9ad38 | 5 GB | completed | 2012-10-09 16:53:05 UTC |
+    | us-west-2      | snap-30913a16 | vol-bd2d709b | 5 GB | completed | 2012-10-09 15:47:18 UTC |
+    | us-west-2      | snap-b264cf94 | vol-02590424 | 5 GB | completed | 2012-10-09 17:04:07 UTC |
+    | us-west-2      | snap-c737f9ad | vol-b1f5e4dd | 5 GB | completed | 2012-07-26 17:01:14 UTC |
+    | us-west-2      | snap-ff8a4395 | vol-69b0a105 | 5 GB | completed | 2012-07-26 17:36:21 UTC |
+    +----------------+---------------+--------------+------+-----------+-------------------------+
+    Snapshots still in use: snap-1a0f076b, snap-ea21299b, snap-bde8fed6, snap-e374358b, snap-d90f1dad, snap-7c23151a, snap-23c17a4c, snap-7d8d9b16, snap-c737f9ad, snap-7fb2ae0b, snap-1776377f, snap-c8e3b49e, snap-cf7024a1, snap-376cd758, snap-ff8a4395, snap-405b6a26, snap-14075142, snap-060a3a37, snap-5fd5ef7b, snap-53cc9b3d, snap-30913a16, snap-2fd1a603, snap-c10b3bf0, snap-fac2f8de, snap-813442ad, snap-b264cf94, snap-79661358, snap-3ab4c11b
+
+
 Generating Textile table of AMI IDs
 ------------------------------------
 

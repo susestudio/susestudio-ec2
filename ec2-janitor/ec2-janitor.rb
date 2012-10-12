@@ -88,7 +88,7 @@ class Ec2Janitor < Thor
     end
   end
 
-  desc "volumes", "Displays EBS volumes in all regions."
+  desc "volumes", "Displays and optionally prunes EBS volumes in all regions."
   method_option :prune, :type => :numeric, :desc => "Delete all volumes older than N minutes."
   def volumes
     time = Time.now.utc
@@ -113,6 +113,38 @@ class Ec2Janitor < Thor
       unless deleted.empty?
         puts "Deleted volumes: #{deleted.join(', ')}"
       end
+    end
+  end
+
+  desc "snapshots", "Displays and optionally prunes EBS snapshots in all regions."
+  method_option :prune, :type => :numeric, :desc => "Deletes all snapshots older than N minutes."
+  def snapshots
+    time = Time.now.utc
+    results = []
+    deleted = []
+    in_use  = []
+    threaded_regions do |region|
+      region.snapshots.with_owner('self').each do |snapshot|
+        uptime = (time - snapshot.start_time).to_i
+        results << [ region.name, snapshot.id, snapshot.volume_id,
+                     "#{snapshot.volume_size} GB", snapshot.status, snapshot.start_time ]
+        if options.prune? && uptime >= (options.prune*60)
+          begin
+            snapshot.delete
+            deleted << snapshot.id
+          rescue AWS::EC2::Errors::InvalidSnapshot::InUse => exception
+            in_use << snapshot.id
+          end
+        end
+      end
+    end
+    if results.empty?
+      puts "No snapshots"
+    else
+      puts table(['Zone', 'Snapshot ID', 'Volume ID', 'Size', 'Status', 'Started' ],
+                 *results.sort_by{ |k| [k[0], k[1]] })
+      puts "Deleted snapshots: #{deleted.join(', ')}"     unless deleted.empty?
+      puts "Snapshots still in use: #{in_use.join(', ')}" unless in_use.empty?
     end
   end
 
