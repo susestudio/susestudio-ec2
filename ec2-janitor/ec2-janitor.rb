@@ -239,7 +239,7 @@ class Ec2Janitor < Thor
     puts <<-EOS
         </tbody>
       </table>
-      <div class="caption">List of openSUSE #{version} AMI IDs.</div>
+      <div class="caption">List of openSUSE #{version} AMI IDs. Click on the AMI ID link to launch.</div>
     EOS
   end
 
