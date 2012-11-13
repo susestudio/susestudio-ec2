@@ -229,7 +229,10 @@ class Ec2Janitor < Thor
           <td class="region-#{country_map[k[0]]}">#{region_map[k[0]]}</td>
           <td><tt>#{k[0]}</tt></td>
           <td><tt>#{k[1]}</tt></td>
-          <td><tt>#{k[2]}</tt></td>
+          <td><tt>
+            <a href="https://console.aws.amazon.com/ec2/home?region=#{k[0]}#launchAmi=#{k[2]}"
+               target="_blank">#{k[2]}</a></tt>
+          </td>
         </tr>
       EOS
     end
