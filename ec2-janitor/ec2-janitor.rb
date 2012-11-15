@@ -42,8 +42,9 @@ class Ec2Janitor < Thor
         next if instance.status == :terminated
         uptime = (time - instance.launch_time).to_i
         results << [
-          region.name, instance.id, instance.instance_type, instance.ip_address,
-          instance.status, instance.launch_time, duration(uptime)
+          region.name, instance.id, instance.key_name, instance.instance_type,
+          instance.ip_address, instance.status, instance.launch_time,
+          duration(uptime)
         ]
         if options.terminate? && uptime >= (options.terminate*60)
           terminated << instance.id
@@ -54,7 +55,7 @@ class Ec2Janitor < Thor
     if results.empty?
       puts "No instances"
     else
-      puts table(['Region','Instance ID', 'Type', 'IP', 'Status', 'Launch time', 'Elapsed'],
+      puts table(['Region','Instance ID', 'Key name', 'Type', 'IP', 'Status', 'Launch time', 'Elapsed'],
            *results.sort_by{ |k| k.last })
       unless terminated.empty?
         puts "Terminated instances: #{terminated.join(', ')}"
