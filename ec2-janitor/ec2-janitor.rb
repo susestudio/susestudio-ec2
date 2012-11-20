@@ -204,7 +204,7 @@ class Ec2Janitor < Thor
         #ami-table       { border: 1px solid gray; border-spacing: 0; }
         #ami-table th    { border-bottom: 1px solid gray; }
         #ami-table th,td { padding: 1px 10px 1px 10px; }
-        #ami-table tt    { font-size: medium; }
+        #ami-table tt    { font-size: 11px; }
         #ami-table td.region-us, td.region-eu, td.region-sg, td.region-tk, td.region-sa {
           padding-left: 30px; background-position: 12px 4px; background-repeat: no-repeat;
         }
