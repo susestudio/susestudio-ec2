@@ -17,12 +17,12 @@ Installation
 -------------
 
 The Amazon EC2 API tools must be installed for the script to work. The easiest
-way is to install the RPM from the [Virtualization:Cloud:EC2 repository]
-(http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/). For
+way is to install the RPM from the [Cloud:EC2 repository]
+(http://download.opensuse.org/repositories/Cloud:/EC2/). For
 example, if you're running openSUSE 12.2, run the following commands:
 
-    sudo zypper addrepo http://download.opensuse.org/repositories/Virtualization:/Cloud:/EC2/openSUSE_12.2/ Virt:Cloud:EC2
-    sudo zypper refresh Virt:Cloud:EC2
+    sudo zypper addrepo http://download.opensuse.org/repositories/Cloud:/EC2/openSUSE_12.2/ Cloud:EC2
+    sudo zypper refresh Cloud:EC2
     sudo zypper install ec2-api-tools
 
 Alternatively, you can [download]
