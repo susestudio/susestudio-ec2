@@ -21,7 +21,7 @@ tarball=../{TARBALL}
 # Defaults
 region=us-east-1
 description="Built by SUSE Studio"
-volume_size=5
+volume_size=0
 should_test_ami=false
 make_public=false
 
@@ -42,9 +42,21 @@ function usage() {
   echo "  --arch ARCH              System architecture [i386, x86_64]. Default is '$arch'."
   echo "  --base BASE_SYSTEM       Base system [11.3, 11.4, SLES10_SP3, SLES11_SP1]. Default is '$base'."
   echo "  --tarball FILE_PATH      Path to Studio EC2 tarball. Default is '$tarball'."
-  echo "  --volume_size SIZE       Root volume size, in GB. Default is $volume_size."
+  echo "  --volume_size SIZE       Root volume size, in GB. Default depends on the image size."
   echo "  --test_ami               Test the resulting AMI by launching and SSH into it."
   echo "  --public                 Make the resulting AMI public."
+}
+
+function determine_volume_size() {
+  local image real_size
+  image=$(basename $tarball .ec2.tar.gz)
+  real_size=$(du -BG --apparent-size $image | sed -r 's/^([0-9]+).*/\1/')
+  if [ $volume_size -lt $real_size ]; then
+    if [ $volume_size -ne 0 ]; then
+      log "Specified volume size is less than required by the image, adjusting."
+    fi
+    volume_size=$real_size
+  fi
 }
 
 function check_ec2_tools() {
@@ -556,6 +568,7 @@ done
 isOpenSUSE=true
 [[ "$base" =~ SLES ]] && isOpenSUSE=false
 
+determine_volume_size
 check_ec2_tools
 check_credentials
 create_security_group
