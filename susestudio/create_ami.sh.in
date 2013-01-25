@@ -200,7 +200,7 @@ function start_instance() {
 
 function wait_for_instance_to_run() {
   log "Waiting for instance to run..." -n
-  for i in {1..10}; do
+  for i in {1..20}; do
     output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
     exit_if_failed
     state=`echo $output | cut -d' ' -f10`
@@ -213,7 +213,7 @@ function wait_for_instance_to_run() {
 
 function wait_for_hostname_and_volume() {
   log "Waiting for hostname..." -n
-  for i in {1..10}; do
+  for i in {1..20}; do
     output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
     exit_if_failed
     hostname=`echo $output | cut -d' ' -f8`
@@ -336,7 +336,7 @@ function sles_stop_instance() {
   output=`ec2-stop-instances --region $region $instance 2>&1`
   exit_if_failed
 
-  for i in {1..10}; do
+  for i in {1..20}; do
     output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
     exit_if_failed
     state=`echo $output | cut -d' ' -f8`
@@ -382,7 +382,7 @@ function sles_reattach_volumes() {
   output=`ec2-detach-volume --region $region $image_volume -i $instance 2>&1`
   exit_if_failed
 
-  for i in {1..10}; do
+  for i in {1..20}; do
     output=`ec2-describe-volumes --region $region $root_volume 2>&1`
     exit_if_failed
     state=`echo $output | cut -d' ' -f6`
@@ -399,16 +399,17 @@ function sles_reattach_volumes() {
   log "Attaching $image_volume as root volume..." -n
   output=`ec2-attach-volume --region $region $image_volume -i $instance -d /dev/sda1 2>&1`
   exit_if_failed
-  for i in {1..10}; do
+  for i in {1..20}; do
     output=`ec2-describe-volumes --region $region $image_volume 2>&1`
     exit_if_failed
-    state=`echo $output | cut -d' ' -f11`
-    [ "$state" = "attached" ] && break
+    stateFull=`echo $output | cut -d' ' -f11`
+    stateAbb=`echo $output | cut -d' ' -f5`
+    [ "$stateFull" = "attached" ] || [ "$stateAbb" = "in-use" ] && break
     sleep 3
     echo -n "."
   done
   echo ""
-  if [ ! "$state" = "attached" ]; then
+  if [ ! "$stateFull" = "attached" ] && [ ! "$stateAbb" = "in-use" ]; then
     log "Failed to attach $image_volume"
     exit 1
   fi
@@ -475,7 +476,7 @@ function clean_up() {
   if [ "$instance" ]; then
     log "Terminating instance $instance..." -n
     output=`ec2-terminate-instances --region "$region" $instance 2>&1`
-    for i in {1..10}; do
+    for i in {1..20}; do
       output=`ec2-describe-instances --region "$region" "$instance" 2>&1`
       state=`echo $output | cut -d' ' -f8`
       [ "$state" = "terminated" ] && break
